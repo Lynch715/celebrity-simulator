@@ -31,8 +31,20 @@ button,input,select{font:inherit}button{border:1px solid var(--line);background:
 @media(max-width:360px){#app{padding-left:6px;padding-right:6px}.brand p{max-width:175px}.stat .value{font-size:15px}.tabs button{font-size:10px}.action .desc{font-size:8px}.guide-inner{padding-left:14px;padding-right:14px}.guide-copy h2{font-size:24px}}
 .talent-reroll{margin-top:6px;font-size:11px;padding:4px 10px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:4px;cursor:pointer}.talent-reroll:disabled{opacity:.4;cursor:default}.badge.gold-b{color:#ebca77;border-color:#67562f}.hl-title{font-size:11px;color:var(--muted);margin-top:10px;letter-spacing:1px}.hl-list{margin-top:5px;display:flex;flex-direction:column;gap:4px}.hl{font-size:11px;border-left:2px solid var(--line);padding:3px 8px;background:var(--panel2);border-radius:0 4px 4px 0}.hl.good{border-left-color:#91d6ac}.hl.bad{border-left-color:#ff9d93}.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;margin-top:6px}.ach{border:1px solid var(--line);background:var(--panel2);border-radius:4px;padding:5px 7px;opacity:.32}.ach.on{opacity:1;border-color:#67562f}.ach b{font-size:11px;display:block}.ach small{font-size:10px;color:var(--muted)}
 /* ===== 扩展包 v3 样式 ===== */
+/* --- UI 审计修正（2026-08） --- */
+html,body{overflow-x:hidden}                 /* 震动动画不再撑出横向滚动条 */
+.type{font-size:10px;color:var(--ink);font-weight:700}   /* 白字压在红底上只有 3.5:1，改深色 */
+.source,.metric .k,.choice small,.skill-cell span{font-size:10px}
+.subnav button{padding:7px 10px}             /* 点击热区 28→32px */
+.talent-reroll{padding:7px 12px}
+.action .desc{font-size:10px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:360px){.action .desc{font-size:10px}}
+.monthbox b{white-space:nowrap}               /* 窄屏「第1/36月」不再折行 */
+@media(max-width:360px){.brand>div{min-width:0}.brand p{max-width:none}}  /* 副标题按剩余宽度自适应省略，不再撑破标题行 */
+
 .tabs{grid-template-columns:repeat(8,1fr)}
 .actions{grid-template-columns:repeat(4,1fr)}
+@media(min-width:620px){.actions{grid-template-columns:repeat(8,1fr)}}
 .action{transition:transform .12s,border-color .12s,background .12s}
 .action:active{transform:scale(.94)}
 .action:hover{border-color:var(--gold);background:var(--panel2)}
@@ -333,7 +345,7 @@ function calculateForecast(s){const active=activeInMonth(s,s.month),load=active.
 function renderStats(){const el=$("#stats");el.innerHTML="";STAT_DEFS.forEach(d=>{const delta=S.lastDelta[d.key]||0,div=document.createElement("div");div.className="stat";div.innerHTML=`<div class="label">${d.name}</div><div class="value ${delta?"pulse":""}">${d.get(S)}</div><div class="delta ${delta>0?"up":delta<0?"down":""}">${delta?(delta>0?"+":"")+round(delta,d.key==="cash"?1:0):""}</div><div class="tip">${d.tip}</div>`;div.onclick=e=>{const on=div.classList.contains("tip-on");document.querySelectorAll(".stat.tip-on").forEach(x=>x.classList.remove("tip-on"));if(!on)div.classList.add("tip-on");e.stopPropagation()};el.appendChild(div)})}
 function renderForecast(){const f=calculateForecast(S);$("#forecast").innerHTML=`<span>当月项目 <b>${f.active.length}</b>个</span><span>档期负荷 <b class="${f.load>1?"down":""}">${Math.round(f.load*100)}%</b></span><span>预计到手 <b>${f.gross}万</b></span><span>团队工资 <b>${f.payroll}万</b></span><span>现金净额 <b class="${f.net>=0?"up":"down"}">${f.net>=0?"+":""}${f.net}万</b></span>${f.load>1?'<span class="warning">档期超载</span>':""}`}
 function renderProfile(){const tags=personaTags(S),f=calculateForecast(S),company=currentCompany(S);$("#identityText").textContent=`${S.playerName} · ${company.name} · ${BACKGROUNDS[S.background].name}`;$("#profileStrip").innerHTML=`<div class="row"><div><h2>${esc(S.playerName)}</h2><div class="meta">${GENDER_NAME[S.gender]} · ${company.name} · 全网排名 ${myRank(S)}/6</div></div><div class="number">公司关系 <b>${S.independent?"-—":S.companyFavor}</b></div></div><div class="tags">${(tags.length?tags:["尚未定型"]).map(t=>`<span class="pill gold">${t}</span>`).join("")}${S.romanceId?`<span class="pill red">${S.romancePublic?"公开恋情":"秘密恋情"}</span>`:""}<span class="pill ${fandomState(S)==="失控"?"red":fandomState(S)==="内讧"?"gold":"green"}">粉圈·${fandomState(S)}</span></div><div class="loadbar"><i style="width:${Math.min(100,f.load*100)}%;background:${f.load>1?"var(--red)":"var(--cyan)"}"></i></div>`}
-const ACTIONS=[{glyph:"▣",name:"争项目",desc:"公司/试镜/谈判",fn:()=>switchTab("projects")},{glyph:"◎",name:"跑人脉",desc:"18位关键人物",fn:()=>switchTab("relations")},{glyph:"♟",name:"管团队",desc:"编制/招聘/解约",fn:actTeam},{glyph:"▲",name:"练业务",desc:"表演/唱功/镜头",fn:actTrain},{glyph:"◇",name:"休息",desc:"健康/情绪/负荷",fn:actRest},{glyph:"!",name:"做公关",desc:"营业/公益/粉丝",fn:actPublicity},{glyph:"♥",name:"粉圈",desc:"数据组/反黑/集资",fn:()=>switchTab("fandom")},{glyph:"⚔",name:"约战",desc:"提前向宿敌下战书",fn:actChallenge}];
+const ACTIONS=[{glyph:"▣",name:"争项目",desc:"试镜/谈判",fn:()=>switchTab("projects")},{glyph:"◎",name:"跑人脉",desc:"18位人物",fn:()=>switchTab("relations")},{glyph:"♟",name:"管团队",desc:"招聘/解约",fn:actTeam},{glyph:"▲",name:"练业务",desc:"表演/唱功",fn:actTrain},{glyph:"◇",name:"休息",desc:"健康/情绪",fn:actRest},{glyph:"!",name:"做公关",desc:"营业/公益",fn:actPublicity},{glyph:"♥",name:"粉圈",desc:"数据/反黑",fn:()=>switchTab("fandom")},{glyph:"⚔",name:"约战",desc:"下战书",fn:actChallenge}];
 function renderActions(){$("#actions").innerHTML=ACTIONS.map((a,i)=>`<div class="action ${S.energy<=0?"off":""} ${(a.name==="约战"&&duelDue(S))||(a.name==="粉圈"&&S.fandom&&S.fandom.anti>=55)?"hot":""}" onclick="ACTIONS[${i}].fn()"><div class="glyph">${a.glyph}</div><div class="name">${a.name}</div><div class="desc">${a.desc}</div></div>`).join("")}
 function renderSkills(){return `<div class="skill-table">${Object.entries(SKILLS).map(([k,v])=>`<div class="skill-cell"><b>${Math.round(S.skills[k])}</b><span>${v}</span></div>`).join("")}</div>`}
 function renderSchedule(){const f=calculateForecast(S),future=[0,1,2].map(d=>{const m=S.month+d,l=monthLoad(S,m);return `<div class="schedule-line"><span class="month">${m>MAX_MONTH?"-—":`第${m}月`}</span><div class="bar"><i style="width:${Math.min(100,l*100)}%;background:${l>1?"var(--red)":"var(--cyan)"}"></i></div><span class="pct ${l>1?"down":""}">${Math.round(l*100)}%</span></div>`}).join("");const active=f.active.length?f.active.map(p=>`<div class="card"><div class="row"><div><span class="type">${PROJECT_TYPES[p.type].name}</span><h3>${p.title}</h3></div><span class="pill blue">至第${p.endMonth}月</span></div><div class="copy">当月负荷 ${Math.round(p.load*100)}% · 合同片酬 ${p.fee}万 · 主要考验 ${SKILLS[p.skill]}</div></div>`).join(""):`<div class="empty">当月没有已签项目。没有曝光很安静，也会被忘记。</div>`;const fee=currentBreakFee(S);$("#panel").innerHTML=`<div class="metric-grid"><div class="metric"><div class="v">${f.active.length}</div><div class="k">当月项目</div></div><div class="metric"><div class="v ${f.load>1?"down":""}">${Math.round(f.load*100)}%</div><div class="k">档期负荷</div></div><div class="metric"><div class="v ${f.net>=0?"up":"down"}">${f.net>=0?"+":""}${f.net}万</div><div class="k">预计净额</div></div></div><div class="card"><div class="section-head"><h2>未来三月档期</h2><span>超过100%会影响作品和健康</span></div>${future}</div>${active}<div class="card contract"><div class="row"><div><h3>${currentCompany(S).name}</h3><span class="pill gold">${S.independent?"独立经营":"经纪合约"}</span></div><div class="number">艺人分成 <b>${Math.round(playerShare(S)*100)}%</b></div></div><div class="copy">${S.independent?"项目、公关和团队成本都由你自己承担。":`当前解约金约${fee}万。可以随时提出解约，但公司不会轻易放人。`}</div>${S.independent?"":`<div class="card-actions"><button class="small danger" onclick="requestBreakContract()">提出解约</button></div>`}</div><div class="section-head"><h2>专业能力</h2><span>训练和项目都能提升</span></div>${renderSkills()}`}
@@ -632,7 +644,7 @@ const DUEL_TACTICS={
  heart:{n:"以退为进",g:"◇",d:"把机会让一步，赌对方失手",v:s=>s.publicFavor*.72+s.image.coherence*.35}
 };
 function rivalName(s){const r=s.npcs.find(n=>n.id==="rival_main");return r?r.name:"对家"}
-function rivalPower(s,key){const c=s.competitors.find(x=>x.main),base=c?c.score:40,d=DIFF(s);const bias={skill:1.05,network:.95,opinion:1.12,capital:.9,heart:.85}[key]||1;return base*1.35*bias*d.rivalMul+rand(-14,16)}
+function rivalPower(s,key,est=false){const c=s.competitors.find(x=>x.main),base=c?c.score:40,d=DIFF(s);const bias={skill:1.05,network:.95,opinion:1.12,capital:.9,heart:.85}[key]||1;return base*1.35*bias*d.rivalMul+(est?1:rand(-14,16))}
 function duelDue(s){return !!(s&&s.duel)&&!s.over&&s.month>=s.duel.next&&s.month<=MAX_MONTH}
 function actChallenge(){
  if(S.duel.cur)return startDuel();
@@ -652,9 +664,9 @@ function startDuel(){
 function duelRound(){
  const s=S,c=s.duel.cur;if(!c)return flushQueue();
  const opts=Object.keys(DUEL_TACTICS).filter(k=>!c.used.includes(k)).map(k=>{
-  const T=DUEL_TACTICS[k],mine=Math.round(T.v(s)),edge=mine-Math.round(rivalPower(s,k)*.62);
+  const T=DUEL_TACTICS[k],mine=Math.round(T.v(s)),theirs=Math.round(rivalPower(s,k,true)*.62),edge=mine-theirs;
   const hint=edge>28?"稳":edge>8?"占优":edge>-12?"五五":"劣势";
-  return eventOption(`${T.g} ${T.n}`,`${T.d} · 我方评估${mine} · ${hint}`,()=>duelResolve(k),!!(T.cost&&s.cash<T.cost));
+  return eventOption(`${T.g} ${T.n}`,`${T.d} · 我方${mine} vs 对方${theirs} · ${hint}`,()=>duelResolve(k),!!(T.cost&&s.cash<T.cost));
  });
  showModal(`第 ${c.round} 局 · ${c.stage}`,`比分 ${c.me} : ${c.rv}\n\n${c.lines.slice(-2).join("\n")||"裁判示意开始。"}`,opts);
 }
@@ -728,7 +740,8 @@ const CHASE_STEPS=[
  {q:"目的地楼下已经有人架好了长焦。",o:[["取消这次见面",-30,"最保险，也最扫兴",{mental:-6}],["戴口罩帽子硬闯",16,"你以为没人认得出",{}],["托记者朋友压一压",-24,"欠人情",{favor:["fang",-6]}],["买通对方",-34,"钱能解决，但留下把柄",{cash:12,tax:6,gray:1}]]}
 ];
 function paparazziChase(reason="有人拍到了你的车"){
- let heat=Math.round(38+S.risks.privacy*.34+(S.romanceId?14:0)+(DIFF(S)===DIFFICULTY.hard?12:0));
+ // 起始暴露度封顶 78：三步都选对仍有翻盘余地，否则风险叠满时这段小游戏必输
+ let heat=Math.min(78,Math.round(38+S.risks.privacy*.34+(S.romanceId?14:0)+(DIFF(S)===DIFFICULTY.hard?10:0)));
  const run=(i)=>{
   if(i>=CHASE_STEPS.length)return chaseEnd(heat);
   const st=CHASE_STEPS[i];
