@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!-- v4批次1 2026-08-31 训练递减+技能专精+艺人工作室 SAVE_VERSION=4 -->
+<!-- v4批次2 2026-08-31 片场事件+窗口期与档期竞争 SAVE_VERSION=5 -->
+<!-- v4批次3 2026-08-31 风险伏笔两段式+CP营业 SAVE_VERSION=6 -->
+<!-- v4批次4 2026-08-31 星路遗产+新开局解锁+星途预感 SAVE_VERSION=7 -->
+<!-- v4批次5 2026-08-31 事件池扩容30条+标签加权+颁奖礼细分 SAVE_VERSION=8 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -135,6 +140,34 @@ html,body{overflow-x:hidden}                 /* 震动动画不再撑出横向�
 .stat .value.pulse{animation:vpulse .6s ease}
 @keyframes vpulse{0%{color:var(--gold);transform:scale(1.14)}100%{color:inherit;transform:none}}
 
+/* ===== v4 样式 ===== */
+/* 技能专精标记 */
+.skill-cell.mastered{border-color:#67562f;background:linear-gradient(180deg,rgba(215,179,90,.09),transparent)}
+.skill-cell.pending{border-color:var(--gold);animation:v4wait 1.6s ease-in-out infinite}
+.skill-cell i{display:block;margin-top:2px;font-style:normal;font-size:8px;line-height:1.3;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skill-cell i.wait{color:var(--cyan)}
+@keyframes v4wait{0%,100%{border-color:var(--line)}50%{border-color:var(--gold)}}
+/* 工作室升级卡片 */
+.studio-card .studio-track{display:flex;gap:4px;margin-top:7px}
+.studio-card .studio-track i{flex:1;height:6px;border-radius:2px;background:var(--panel3);border:1px solid var(--line)}
+.studio-card .studio-track i.on{background:var(--gold);border-color:var(--gold)}
+/* 限时窗口与档期竞争标记 */
+.attr.contest{color:#ebca77;border-color:#67562f}
+/* 点击热区统一到32px（移动端指触）：.small 与 .subnav button 原为29/31.5px */
+.card-actions button{min-height:32px}
+.subnav button{min-height:32px}
+/* 星路遗产三选一。圆角与底色沿用基础 button，不另起一套，hover 的描金也交回基础样式 */
+.relic-grid{display:grid;gap:5px;margin-top:6px}
+.relic-grid .choice{width:100%}
+.relic-pick{border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:8px}
+.relic-pick b{display:block;font-size:12px}
+.relic-pick small{display:block;font-size:9px;color:var(--muted);margin-top:2px}
+.relic-mini{min-height:32px;padding:5px 9px;font-size:11px;width:auto !important}
+.relic-done{border:1px solid #67562f;background:#302a1d;border-radius:6px;padding:8px;margin-top:6px}
+.relic-done b{display:block;font-size:12px;color:var(--gold)}
+.relic-done small{display:block;font-size:9px;color:var(--muted);margin-top:2px}
+/* 星途预感：标题沿用 .card h3 的14px，不单独缩小 */
+.omen-card{border-color:#67562f}
 </style>
 </head>
 <body>
@@ -159,7 +192,7 @@ html,body{overflow-x:hidden}                 /* 震动动画不再撑出横向�
 <div id="splash" class="splash"></div>
 
 <script>
-const SAVE_KEY="celebrity_sim_save_v1",SAVE_VERSION=3,MAX_MONTH=36;
+const SAVE_KEY="celebrity_sim_save_v1",SAVE_VERSION=8,MAX_MONTH=36;
 const $=q=>document.querySelector(q),clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v)),round=(v,n=1)=>Math.round(v*10**n)/10**n,pick=a=>a[Math.floor(Math.random()*a.length)],rand=(a,b)=>a+Math.random()*(b-a);
 const GENDER_NAME={male:"男艺人",female:"女艺人"};
 const BACKGROUNDS={
@@ -236,7 +269,7 @@ function playerShare(s){return currentCompany(s).share}
 function playerScore(s){return round(s.fame*.32+s.publicFavor*.19+s.commercial*.17+s.track.bestQuality*.18+s.track.awards*4+s.fans*.1,1)}
 function myRank(s){return 1+s.competitors.filter(x=>x.score>playerScore(s)).length}
 function personaTags(s){const p=s.persona,rows=[["实力派",p.actor],["综艺咖",p.variety],["流量偶像",p.idol],["音乐人",p.music],["时尚宠儿",p.fashion],["商业明星",p.business],["劳模",p.workaholic],["公益面孔",p.public]];return rows.filter(x=>x[1]>=8).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0])}
-function initialTeam(company){const managerNames={shengguang:"马秀琴",qingmu:"赵启平",huozhong:"安欣然"},assistantNames={shengguang:"小余",qingmu:"孙璨",huozhong:"章佳"};return[
+function initialTeam(company){const managerNames={shengguang:"马秀琴",qingmu:"赵启平",huozhong:"安欣然",yuanhang:"高霜"},assistantNames={shengguang:"小余",qingmu:"孙璨",huozhong:"章佳",yuanhang:"许安"};return[
  {id:1,name:managerNames[company],role:"manager",eligible:["manager","executive"],skill:3,loyalty:48,fav:45,salary:2.6,trait:"公司指派，懂资源，也会把公司利益放在前面。",faction:"公司"},
  {id:2,name:assistantNames[company],role:"assistant",eligible:["assistant","executive"],skill:2,loyalty:61,fav:52,salary:1.2,trait:"年轻、细心，但还不太会处理大场面。",faction:"自己人"}
  ]}
@@ -263,26 +296,28 @@ function createNpcs(s){const main=s.gender==="male"?{name:"江晚棠",gender:"fe
 function createCompetitors(s){return s.npcs.filter(n=>n.group==="艺人").map((n,i)=>({id:n.id,name:n.name,route:n.route,score:34+i*3+rand(-2,2),momentum:rand(.8,1.25),main:n.id==="rival_main"}))}
 function makeTeamCandidates(s){const roles=["manager","executive","assistant","pr","stylist","coach"],traits={manager:["擅长谈判，不爱情绪劳动。","前大公司经纪人，人脉广但要价高。"],executive:["档期表排得像军用地图。","片场经验足，遇事很少慌。"],assistant:["嘴严、细心，熟悉你的所有习惯。","性格活泼，容易和粉丝混熟。"],pr:["热搜嗅觉灵敏，但手段偏强硬。","文字稳健，不喜欢制造假新闻。"],stylist:["眼光大胆，经常把你送上造型热搜。","懂品牌关系，但对艺人身材管理很严。"],coach:["训练严格，上课时不管你是不是明星。","懂得如何在有限时间里提升镜头表现。"]};return Array.from({length:3},()=>{const role=pick(roles),alt=role==="manager"?"executive":role==="executive"?"manager":role==="assistant"?"executive":null,skill=Math.ceil(rand(2,5));return{id:s.teamSeq++,name:pick(TEAM_NAMES)+pick(["","老师","姐","哥"]),role:null,eligible:[role,...(alt?[alt]:[])],skill,loyalty:Math.round(rand(38,76)),fav:45,salary:round(.7+skill*.55,1),trait:pick(traits[role]),faction:Math.random()<.35?"公司":"独立"}})}
 function makeProject(t,source,s,index){const diff=Math.round(rand(t.difficulty[0],t.difficulty[1])),duration=Math.round(rand(t.duration[0],t.duration[1])),fee=round(rand(t.fee[0],t.fee[1]),0),network=s.npcs.filter(n=>n.fav>=60).length;return{id:`p${s.month}_${index}_${Math.floor(Math.random()*9999)}`,type:t.type,title:pick(t.titles),desc:t.desc,source,status:"open",duration,load:t.load+rand(-.04,.05),fee,difficulty:diff,fameGain:t.fame,repGain:t.rep,commercialGain:t.commercial,fanGain:t.fans,skill:t.skill,direct:source==="market"&&(s.fame+network*3+rand(-10,18)>diff+25)} }
-function generateProjects(s){const company=currentCompany(s),preferred=s.company==="qingmu"?["film","drama","music"]:s.company==="shengguang"?["drama","variety","endorsement"]:["live","music","variety","drama"];const companyPool=PROJECT_TEMPLATES.filter(t=>preferred.includes(t.type));const rows=[makeProject(pick(companyPool),s.independent?"studio":"company",s,0)],used=new Set([rows[0].title]);let guard=0;while(rows.length<6&&guard++<80){const p=makeProject(pick(PROJECT_TEMPLATES),"market",s,rows.length);if(!used.has(p.title)){used.add(p.title);rows.push(p)}}return rows}
-function initialState(config){const b=BACKGROUNDS[config.background],c=COMPANIES[config.company];const s={version:SAVE_VERSION,playerName:config.name,gender:config.gender,orientation:config.orientation,background:config.background,company:config.company,independent:false,month:1,energy:4,cash:b.cash+c.advance,fame:b.fame,publicFavor:b.publicFavor,commercial:b.commercial,fans:b.fans,health:b.health,mental:b.mental,skills:{...b.skills},companyFavor:48,team:initialTeam(config.company),teamSeq:10,candidates:[],npcs:[],competitors:[],projects:[],activeProjects:[],trends:[],risks:{...b.risk,image:12},warnings:{contract:0,tax:0,health:0,mental:0,privacy:0,team:0,fandom:0,image:0},warningMonth:{},usedEvents:[],lastEvent:null,flags:{},priors:{},image:{tag:null,coherence:70,believers:0,established:false,act:0,history:[],pivoted:false,heat:0},persona:{actor:0,variety:0,idol:config.background==="talent"?6:0,music:config.background==="talent"?5:0,fashion:config.background==="influencer"?5:0,business:config.background==="influencer"?6:0,workaholic:0,public:0},romanceId:null,romancePublic:false,contract:{baseFee:c.breakFee},track:{income:0,expense:0,projects:0,hits:0,flops:0,film:0,drama:0,variety:0,music:0,endorsement:0,live:0,public:0,bestQuality:0,awards:0,nominations:0,auditions:0,auditionWins:0,relations:0,hires:0,fires:0,teamMoves:0,trends:0,gray:0,maxFame:b.fame,minCondition:(b.health+b.mental)/2},last:{income:0,expense:0,net:0,load:0,active:0},lastDelta:{},tab:"schedule",teamFilter:"all",relationFilter:"all",log:[],over:false,endData:null};s.talents=(config.talents||[]).filter(id=>TALENTS[id]);s.talents.forEach(id=>TALENTS[id].apply(s));s.npcs=createNpcs(s);s.competitors=createCompetitors(s);s.candidates=makeTeamCandidates(s);s.projects=generateProjects(s);s.trends=[{id:"debut_1",title:`${s.playerName}正式签约${c.name}`,body:"公司发出了签约照，评论区有好奇，也有人问：这是谁？",severity:1,truth:"true",kind:"good",status:"open"}];gameLog(s,"month",`签约${c.name}。你和${s.npcs.find(n=>n.id==="rival_main").name}一起坐在会议室里，各自拿到了第一份合约。`);extInit(s,config);s.talents.forEach(id=>{const t=TALENTS[id];if(t&&t.lock&&t.apply)t.apply(s)});return s}
+function generateProjects(s){const company=currentCompany(s);let preferred=s.company==="qingmu"?["film","drama","music"]:s.company==="shengguang"?["drama","variety","endorsement"]:["live","music","variety","drama"];if(s.company==="yuanhang"&&!s.independent)preferred=["film","music","drama"];const companyPool=PROJECT_TEMPLATES.filter(t=>preferred.includes(t.type));const rows=[makeProject(pick(companyPool),s.independent?"studio":"company",s,0)],used=new Set([rows[0].title]);let guard=0;while(rows.length<6&&guard++<80){const p=makeProject(pick(PROJECT_TEMPLATES),"market",s,rows.length);if(!used.has(p.title)){used.add(p.title);rows.push(p)}}return rows}
+function initialState(config){const b=BACKGROUNDS[config.background],c=COMPANIES[config.company];const s={version:SAVE_VERSION,playerName:config.name,gender:config.gender,orientation:config.orientation,background:config.background,company:config.company,independent:false,month:1,energy:4,cash:b.cash+c.advance,fame:b.fame,publicFavor:b.publicFavor,commercial:b.commercial,fans:b.fans,health:b.health,mental:b.mental,skills:{...b.skills},companyFavor:48,team:initialTeam(config.company),teamSeq:10,candidates:[],npcs:[],competitors:[],projects:[],activeProjects:[],trends:[],risks:{...b.risk,image:12},warnings:{contract:0,tax:0,health:0,mental:0,privacy:0,team:0,fandom:0,image:0},warningMonth:{},usedEvents:[],lastEvent:null,flags:{},priors:{},image:{tag:null,coherence:70,believers:0,established:false,act:0,history:[],pivoted:false,heat:0},persona:{actor:0,variety:0,idol:config.background==="talent"?6:0,music:config.background==="talent"?5:0,fashion:config.background==="influencer"?5:0,business:config.background==="influencer"?6:0,workaholic:0,public:0},romanceId:null,romancePublic:false,contract:{baseFee:c.breakFee},track:{income:0,expense:0,projects:0,hits:0,flops:0,film:0,drama:0,variety:0,music:0,endorsement:0,live:0,public:0,bestQuality:0,awards:0,nominations:0,auditions:0,auditionWins:0,relations:0,hires:0,fires:0,teamMoves:0,trends:0,gray:0,maxFame:b.fame,minCondition:(b.health+b.mental)/2},last:{income:0,expense:0,net:0,load:0,active:0},lastDelta:{},tab:"schedule",teamFilter:"all",relationFilter:"all",log:[],over:false,endData:null};s.talents=(config.talents||[]).filter(id=>TALENTS[id]);s.talents.forEach(id=>TALENTS[id].apply(s));s.npcs=createNpcs(s);s.competitors=createCompetitors(s);s.candidates=makeTeamCandidates(s);s.projects=generateProjects(s);s.trends=[{id:"debut_1",title:`${s.playerName}正式签约${c.name}`,body:"公司发出了签约照，评论区有好奇，也有人问：这是谁？",severity:1,truth:"true",kind:"good",status:"open"}];gameLog(s,"month",`签约${c.name}。你和${s.npcs.find(n=>n.id==="rival_main").name}一起坐在会议室里，各自拿到了第一份合约。`);extInit(s,config);v4Init(s);v5Init(s);v6Init(s);v7Init(s);v8Init(s);applyRelic(s);s.talents.forEach(id=>{const t=TALENTS[id];if(t&&t.lock&&t.apply)t.apply(s)});return s}
 
 function chooseGender(v){draft.gender=v;$("#genderMale").classList.toggle("on",v==="male");$("#genderFemale").classList.toggle("on",v==="female");renderCreatorSummary()}
 function chooseBackground(v){draft.background=v;renderCreatorChoices()}
 function chooseCompany(v){draft.company=v;renderCreatorChoices()}
-function renderCreatorChoices(){if(typeof document==="undefined")return;$("#diffChoices").innerHTML=Object.entries(DIFFICULTY).map(([k,v])=>`<button class="choice ${(draft.difficulty||"normal")===k?"on":""}" onclick="chooseDifficulty('${k}')"><b>${v.name}</b><small>${v.desc}</small></button>`).join("");const __h=$("#hallBox");if(__h)__h.innerHTML=renderHall();$("#backgroundChoices").innerHTML=Object.entries(BACKGROUNDS).map(([k,v])=>`<button class="choice ${draft.background===k?"on":""}" onclick="chooseBackground('${k}')"><b>${v.name}</b><small>${v.desc}</small></button>`).join("");$("#companyChoices").innerHTML=Object.entries(COMPANIES).filter(([k])=>k!=="self").map(([k,v])=>`<button class="choice ${draft.company===k?"on":""}" onclick="chooseCompany('${k}')"><b>${v.name}</b><small>${v.desc} 艺人分成${Math.round(v.share*100)}%</small></button>`).join("");if(!draft.talentPool)draft.talentPool=drawTalentPool();$("#talentChoices").innerHTML=draft.talentPool.map(k=>{const t=TALENTS[k];return `<button class="choice ${draft.talents.includes(k)?"on":""}" onclick="toggleTalent('${k}')"><b>${t.name}${t.lock?" ✦":""}</b><small>${t.desc}</small></button>`}).join("");$("#talentReroll").textContent=`换一批（剩${draft.talentRerolls}次）`;$("#talentReroll").disabled=draft.talentRerolls<=0;renderCreatorSummary()}
+function renderCreatorChoices(){if(typeof document==="undefined")return;$("#diffChoices").innerHTML=Object.entries(DIFFICULTY).map(([k,v])=>`<button class="choice ${(draft.difficulty||"normal")===k?"on":""}" onclick="chooseDifficulty('${k}')"><b>${v.name}</b><small>${v.desc}</small></button>`).join("");const __h=$("#hallBox");if(__h)__h.innerHTML=renderHall();$("#backgroundChoices").innerHTML=Object.entries(BACKGROUNDS).map(([k,v])=>{const ok=optionUnlocked(k);return `<button class="choice ${draft.background===k?"on":""} ${ok?"":"talent-locked"}" ${ok?`onclick="chooseBackground('${k}')"`:""}><b>${v.name}${UNLOCKS[k]?" ✦":""}</b><small>${ok?v.desc:"未解锁："+UNLOCKS[k].need}</small></button>`}).join("");$("#companyChoices").innerHTML=Object.entries(COMPANIES).filter(([k])=>k!=="self").map(([k,v])=>{const ok=optionUnlocked(k);return `<button class="choice ${draft.company===k?"on":""} ${ok?"":"talent-locked"}" ${ok?`onclick="chooseCompany('${k}')"`:""}><b>${v.name}${UNLOCKS[k]?" ✦":""}</b><small>${ok?`${v.desc} 艺人分成${Math.round(v.share*100)}%`:"未解锁："+UNLOCKS[k].need}</small></button>`}).join("");if(!draft.talentPool)draft.talentPool=drawTalentPool();$("#talentChoices").innerHTML=draft.talentPool.map(k=>{const t=TALENTS[k];return `<button class="choice ${draft.talents.includes(k)?"on":""}" onclick="toggleTalent('${k}')"><b>${t.name}${t.lock?" ✦":""}</b><small>${t.desc}</small></button>`}).join("");$("#talentReroll").textContent=`换一批（剩${draft.talentRerolls}次）`;$("#talentReroll").disabled=draft.talentRerolls<=0;renderCreatorSummary()}
 function drawTalentPool(){const keys=Object.keys(TALENTS).filter(talentUnlocked);const pool=[];let g=0;while(pool.length<4&&g++<200){const k=pick(keys);if(!pool.includes(k))pool.push(k)}return pool}
 function chooseDifficulty(v){draft.difficulty=v;renderCreatorChoices()}
 function toggleTalent(id){const i=draft.talents.indexOf(id);if(i>=0)draft.talents.splice(i,1);else{if(draft.talents.length>=2)return;draft.talents.push(id)}renderCreatorChoices()}
 function rerollTalents(){if(draft.talentRerolls<=0)return;draft.talentRerolls--;draft.talents=[];draft.talentPool=drawTalentPool();renderCreatorChoices()}
 function renderCreatorSummary(){if(typeof document==="undefined")return;const b=BACKGROUNDS[draft.background],c=COMPANIES[draft.company];$("#creatorSummary").innerHTML=`<b>${GENDER_NAME[draft.gender]} · ${b.name} · ${c.name}</b><br>初始知名度 ${b.fame}，路人缘 ${b.publicFavor}，粉丝忠诚 ${b.fans}。合约解约金 ${c.breakFee}万。`}
-function startCareer(){const name=$("#nameInput").value.trim()||(draft.gender==="male"?"无名男艺人":"无名女艺人"),orientation=$("#orientationInput").value;S=initialState({...draft,name,orientation,legacy:(()=>{try{return loadMeta().legacy||null}catch(e){return null}})()});$("#creator").classList.remove("show");renderAll();const rival=S.npcs.find(n=>n.id==="rival_main");showModal("签约第一天",`你和${rival.name}同天签约。
+function startCareer(){const name=$("#nameInput").value.trim()||(draft.gender==="male"?"无名男艺人":"无名女艺人"),orientation=$("#orientationInput").value;S=initialState({...draft,name,orientation,legacy:(()=>{try{const m=loadMeta();return relicToLegacy(m.relic)||m.legacy||null}catch(e){return null}})()});try{const m=loadMeta();if(m.relic){m.relic=null;saveMeta(m)}}catch(e){}$("#creator").classList.remove("show");renderAll();const rival=S.npcs.find(n=>n.id==="rival_main");showModal("签约第一天",`你和${rival.name}同天签约。
 
 经纪人把公司安排的第一个项目放在你面前，市场上还有五个机会正在选人。
 
 每月4点行动力。项目可以跨月和重叠，但镜头看不见的合同、健康、团队和私生活风险，都会继续累积。`,[{text:"看看第一个项目",fn:()=>switchTab("projects")}])}
 
 function save(){if(!S)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-function load(){try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;const data=JSON.parse(raw);if(data.version!==SAVE_VERSION)return false;S=data;return true}catch(e){return false}}
+function load(){try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;const data=JSON.parse(raw);if(!data||typeof data.version!=="number"||data.version>SAVE_VERSION||data.version<3)return false;migrateSave(data);S=data;return true}catch(e){return false}}
+/* 存档迁移：v3 及以后的档一律走 v4Init 补默认值（幂等），不再直接丢弃旧档。 */
+function migrateSave(s){v4Init(s);v5Init(s);v6Init(s);v7Init(s);v8Init(s);s.version=SAVE_VERSION;return s}
 const META_KEY="celebrity_sim_meta_v1";
 function loadMeta(){try{const m=JSON.parse(localStorage.getItem(META_KEY));if(m&&m.ach)return m}catch(e){}return{ach:{},runs:0}}
 function saveMeta(m){try{localStorage.setItem(META_KEY,JSON.stringify(m))}catch(e){}}
@@ -336,25 +371,25 @@ function projectedMaxLoad(s,p){let max=0;for(let m=s.month;m<s.month+p.duration;
 function auditionChance(s,p){const manager=teamPower(s,"manager"),network=s.npcs.filter(n=>n.fav>=60).length,company=currentCompany(s);return clamp(.14+s.skills[p.skill]/145+s.fame/280+manager*.1+network*.012+(company.power||0)-p.difficulty/170-(s.flags.blacklisted? .18:0)+(hasTalent(s,"camera")?.08:0)+DIFF(s).chance,.06,.93)}
 function chanceText(v){return v>=.75?"把握很大":v>=.55?"有竞争力":v>=.35?"五五开":v>=.18?"希望较小":"几乎没戏"}
 function signProject(p){const max=projectedMaxLoad(S,p);p.status="accepted";p.startMonth=S.month;p.endMonth=S.month+p.duration-1;S.activeProjects.push({...p});S.companyFavor=clamp(S.companyFavor+(p.source==="company"?2:0));if(max>1){risk(S,"health",Math.round((max-1)*12));risk(S,"mental",Math.round((max-1)*9));risk(S,"team",Math.round((max-1)*8));S.persona.workaholic+=3}gameLog(S,"good",`签下项目：${p.title}，档期${p.duration}个月。`);imageFitOnSign(S,p);const post=[];if(["film","drama"].includes(p.type)&&p.fee>=25&&Math.random()<.6)post.push(()=>billingDuel(p));if(["film","drama"].includes(p.type)&&Math.random()<.72)post.push(()=>tableRead(p));if(post.length)queueAll(post);toast("签下 "+p.title,"good");tickerPush(`#${esc(S.playerName)}加盟${esc(p.title)}#`,"gold");renderAll()}
-function acceptProject(id){const p=S.projects.find(x=>x.id===id);if(!p||p.status!=="open")return;const max=projectedMaxLoad(S,p);if(max>1.15){showModal("档期将严重超载",`签下${p.title}后，未来月份最高负荷约${Math.round(max*100)}%。这会影响作品质量、健康和团队稳定。`,[eventOption("仍然签约","高风险",()=>signProject(p)),eventOption("暂不签","",()=>{})]);return}signProject(p)}
+function acceptProject(id){const p=S.projects.find(x=>x.id===id);if(!p||p.status!=="open")return;if(p.contested&&!p.contestResolved){if(S.cpContract&&p.rivalId===S.cpContract.id){/* 合体项目：营业中的对象不会跟你抢，直接变成合作 */p.contestResolved=true;p.cpBoost=true;gameLog(S,"good",`${p.title}最后定成了你和${S.cpContract.name}的合作。`);toast("合体项目","good")}else{contestProject(id);return}}const max=projectedMaxLoad(S,p);if(max>1.15){showModal("档期将严重超载",`签下${p.title}后，未来月份最高负荷约${Math.round(max*100)}%。这会影响作品质量、健康和团队稳定。`,[eventOption("仍然签约","高风险",()=>signProject(p)),eventOption("暂不签","",()=>{})]);return}signProject(p)}
 function refuseProject(id){const p=S.projects.find(x=>x.id===id);if(!p||p.status!=="open")return;p.status="lost";if(p.source==="company"){S.companyFavor=clamp(S.companyFavor-7);risk(S,"contract",7);gameLog(S,"bad",`拒绝公司项目${p.title}，艺人总监没有回复。`)}else gameLog(S,"",`放弃了${p.title}。`);renderAll()}
 function negotiateProject(id){if(!needEnergy())return;const p=S.projects.find(x=>x.id===id);if(!p||p.status!=="open")return;const chance=clamp(.3+teamPower(S,"manager")*.25+S.skills.social/220,.2,.82);spend();if(Math.random()<chance){p.fee=round(p.fee*1.18,0);showModal("条件谈回来了",`经纪人把片酬和署名条款往回谈了一步。新片酬${p.fee}万，项目已签下。`,[{text:"签约",fn:()=>acceptProject(id)}])}else{S.companyFavor=clamp(S.companyFavor-2);if(Math.random()<.35){p.status="lost";showModal("项目被抢走","对方没有继续谈，转身签了另一位艺人。",[{text:"认了"}])}else showModal("谈判失败","片酬和条件都没有变。项目还在等你决定。",[{text:"回去考虑"}])}}
 function auditionProject(id){if(!needEnergy())return;const p=S.projects.find(x=>x.id===id);if(!p||p.status!=="open")return;const chance=auditionChance(S,p);S.track.auditions++;spend();if(Math.random()<chance){S.track.auditionWins++;relation(S,"rival_main",-1);showModal("试镜通过",`试镜结束两天后，经纪人接到了通知：${p.title}愿意签你。`,[eventOption("签下项目",`档期${p.duration}个月`,()=>acceptProject(id)),eventOption("放弃","",()=>refuseProject(id))])}else{p.status="lost";const winner=Math.random()<.45?S.npcs.find(n=>n.id==="rival_main").name:pick(S.competitors).name;gameLog(S,"bad",`${p.title}试镜失败，角色给了${winner}。`);showModal("试镜没过",`剧组的回复很客气：形象与角色不太匹配。后来你听说，角色给了${winner}。`,[{text:"下一个"}]);renderAll()}}
 
-function calculateForecast(s){const active=activeInMonth(s,s.month),load=active.reduce((a,p)=>a+p.load,0),gross=active.reduce((a,p)=>a+p.fee*playerShare(s)/p.duration,0),payroll=totalPayroll(s),expense=payroll+3+gross*.08+(load>1?(load-1)*12:0);return{active,load,gross:round(gross,1),payroll,expense:round(expense,1),net:round(gross-expense,1),conditionDelta:load>.9?-Math.round((load-.75)*12):load<.35?2:0}}
+function calculateForecast(s){const active=activeInMonth(s,s.month),load=active.reduce((a,p)=>a+p.load,0),gross=active.reduce((a,p)=>a+p.fee*masteryFeeMul(s,p)*playerShare(s)/p.duration,0),payroll=totalPayroll(s),expense=payroll+3+gross*.08+(load>1?(load-1)*12:0);return{active,load,gross:round(gross,1),payroll,expense:round(expense,1),net:round(gross-expense,1),conditionDelta:load>.9?-Math.round((load-.75)*12):load<.35?2:0}}
 function renderStats(){const el=$("#stats");el.innerHTML="";STAT_DEFS.forEach(d=>{const delta=S.lastDelta[d.key]||0,div=document.createElement("div");div.className="stat";div.innerHTML=`<div class="label">${d.name}</div><div class="value ${delta?"pulse":""}">${d.get(S)}</div><div class="delta ${delta>0?"up":delta<0?"down":""}">${delta?(delta>0?"+":"")+round(delta,d.key==="cash"?1:0):""}</div><div class="tip">${d.tip}</div>`;div.onclick=e=>{const on=div.classList.contains("tip-on");document.querySelectorAll(".stat.tip-on").forEach(x=>x.classList.remove("tip-on"));if(!on)div.classList.add("tip-on");e.stopPropagation()};el.appendChild(div)})}
 function renderForecast(){const f=calculateForecast(S);$("#forecast").innerHTML=`<span>当月项目 <b>${f.active.length}</b>个</span><span>档期负荷 <b class="${f.load>1?"down":""}">${Math.round(f.load*100)}%</b></span><span>预计到手 <b>${f.gross}万</b></span><span>团队工资 <b>${f.payroll}万</b></span><span>现金净额 <b class="${f.net>=0?"up":"down"}">${f.net>=0?"+":""}${f.net}万</b></span>${f.load>1?'<span class="warning">档期超载</span>':""}`}
-function renderProfile(){const tags=personaTags(S),f=calculateForecast(S),company=currentCompany(S);$("#identityText").textContent=`${S.playerName} · ${company.name} · ${BACKGROUNDS[S.background].name}`;$("#profileStrip").innerHTML=`<div class="row"><div><h2>${esc(S.playerName)}</h2><div class="meta">${GENDER_NAME[S.gender]} · ${company.name} · 全网排名 ${myRank(S)}/6</div></div><div class="number">公司关系 <b>${S.independent?"-—":S.companyFavor}</b></div></div><div class="tags">${(tags.length?tags:["尚未定型"]).map(t=>`<span class="pill gold">${t}</span>`).join("")}${S.romanceId?`<span class="pill red">${S.romancePublic?"公开恋情":"秘密恋情"}</span>`:""}<span class="pill ${fandomState(S)==="失控"?"red":fandomState(S)==="内讧"?"gold":"green"}">粉圈·${fandomState(S)}</span></div><div class="loadbar"><i style="width:${Math.min(100,f.load*100)}%;background:${f.load>1?"var(--red)":"var(--cyan)"}"></i></div>`}
+function renderProfile(){const tags=personaTags(S),f=calculateForecast(S),company=currentCompany(S);$("#identityText").textContent=`${S.playerName} · ${company.name} · ${BACKGROUNDS[S.background].name}`;$("#profileStrip").innerHTML=`<div class="row"><div><h2>${esc(S.playerName)}</h2><div class="meta">${GENDER_NAME[S.gender]} · ${company.name} · 全网排名 ${myRank(S)}/6</div></div><div class="number">公司关系 <b>${S.independent?"-—":S.companyFavor}</b></div></div><div class="tags">${(tags.length?tags:["尚未定型"]).map(t=>`<span class="pill gold">${t}</span>`).join("")}${S.romanceId?`<span class="pill red">${S.romancePublic?"公开恋情":"秘密恋情"}</span>`:""}${S.cpContract?`<span class="pill gold">CP营业·${esc(S.cpContract.name)}</span>`:""}${foreshadowNames(S).slice(0,2).map(x=>`<span class="pill red">隐忧·${x}</span>`).join("")}<span class="pill ${fandomState(S)==="失控"?"red":fandomState(S)==="内讧"?"gold":"green"}">粉圈·${fandomState(S)}</span></div><div class="loadbar"><i style="width:${Math.min(100,f.load*100)}%;background:${f.load>1?"var(--red)":"var(--cyan)"}"></i></div>`}
 const ACTIONS=[{glyph:"▣",name:"争项目",desc:"试镜/谈判",fn:()=>switchTab("projects")},{glyph:"◎",name:"跑人脉",desc:"18位人物",fn:()=>switchTab("relations")},{glyph:"♟",name:"管团队",desc:"招聘/解约",fn:actTeam},{glyph:"▲",name:"练业务",desc:"表演/唱功",fn:actTrain},{glyph:"◇",name:"休息",desc:"健康/情绪",fn:actRest},{glyph:"!",name:"做公关",desc:"营业/公益",fn:actPublicity},{glyph:"♥",name:"粉圈",desc:"数据/反黑",fn:()=>switchTab("fandom")},{glyph:"⚔",name:"约战",desc:"下战书",fn:actChallenge}];
 function renderActions(){$("#actions").innerHTML=ACTIONS.map((a,i)=>`<div class="action ${S.energy<=0?"off":""} ${(a.name==="约战"&&duelDue(S))||(a.name==="粉圈"&&S.fandom&&S.fandom.anti>=55)?"hot":""}" onclick="ACTIONS[${i}].fn()"><div class="glyph">${a.glyph}</div><div class="name">${a.name}</div><div class="desc">${a.desc}</div></div>`).join("")}
-function renderSkills(){return `<div class="skill-table">${Object.entries(SKILLS).map(([k,v])=>`<div class="skill-cell"><b>${Math.round(S.skills[k])}</b><span>${v}</span></div>`).join("")}</div>`}
-function renderSchedule(){const f=calculateForecast(S),future=[0,1,2].map(d=>{const m=S.month+d,l=monthLoad(S,m);return `<div class="schedule-line"><span class="month">${m>MAX_MONTH?"-—":`第${m}月`}</span><div class="bar"><i style="width:${Math.min(100,l*100)}%;background:${l>1?"var(--red)":"var(--cyan)"}"></i></div><span class="pct ${l>1?"down":""}">${Math.round(l*100)}%</span></div>`}).join("");const active=f.active.length?f.active.map(p=>`<div class="card"><div class="row"><div><span class="type">${PROJECT_TYPES[p.type].name}</span><h3>${p.title}</h3></div><span class="pill blue">至第${p.endMonth}月</span></div><div class="copy">当月负荷 ${Math.round(p.load*100)}% · 合同片酬 ${p.fee}万 · 主要考验 ${SKILLS[p.skill]}</div></div>`).join(""):`<div class="empty">当月没有已签项目。没有曝光很安静，也会被忘记。</div>`;const fee=currentBreakFee(S);$("#panel").innerHTML=`<div class="metric-grid"><div class="metric"><div class="v">${f.active.length}</div><div class="k">当月项目</div></div><div class="metric"><div class="v ${f.load>1?"down":""}">${Math.round(f.load*100)}%</div><div class="k">档期负荷</div></div><div class="metric"><div class="v ${f.net>=0?"up":"down"}">${f.net>=0?"+":""}${f.net}万</div><div class="k">预计净额</div></div></div><div class="card"><div class="section-head"><h2>未来三月档期</h2><span>超过100%会影响作品和健康</span></div>${future}</div>${active}<div class="card contract"><div class="row"><div><h3>${currentCompany(S).name}</h3><span class="pill gold">${S.independent?"独立经营":"经纪合约"}</span></div><div class="number">艺人分成 <b>${Math.round(playerShare(S)*100)}%</b></div></div><div class="copy">${S.independent?"项目、公关和团队成本都由你自己承担。":`当前解约金约${fee}万。可以随时提出解约，但公司不会轻易放人。`}</div>${S.independent?"":`<div class="card-actions"><button class="small danger" onclick="requestBreakContract()">提出解约</button></div>`}</div><div class="section-head"><h2>专业能力</h2><span>训练和项目都能提升</span></div>${renderSkills()}`}
-function renderProjects(){$("#panel").innerHTML=`<div class="section-head"><h2>本月项目池</h2><span>1个公司安排 + 5个市场机会</span></div>${S.projects.map(p=>{const chance=auditionChance(S,p),max=projectedMaxLoad(S,p);return `<div class="card project-card ${p.status}"><div class="row"><div><span class="source">${p.source==="company"?"公司安排":p.source==="studio"?"工作室推荐":"市场机会"}</span><span class="type">${PROJECT_TYPES[p.type].name}</span><h3>${p.title}</h3></div><span class="pill ${p.status==="accepted"?"green":p.status==="lost"?"red":"blue"}">${p.status==="accepted"?"已签约":p.status==="lost"?"已失去":p.direct?"直接邀约":"待决定"}</span></div><div class="copy">${p.desc}</div><div class="attrs"><span class="attr">档期 ${p.duration}月</span><span class="attr">负荷 ${Math.round(p.load*100)}%</span><span class="attr">片酬 ${p.fee}万</span><span class="attr">${SKILLS[p.skill]} ${Math.round(S.skills[p.skill])}</span>${p.source==="market"&&!p.direct?`<span class="attr">${chanceText(chance)}</span>`:""}${max>1?`<span class="attr warning">最高负荷${Math.round(max*100)}%</span>`:""}</div>${p.status==="open"?`<div class="card-actions">${p.source!=="market"||p.direct?`<button class="small" onclick="acceptProject('${p.id}')">接受</button><button class="small" onclick="negotiateProject('${p.id}')">谈条件</button>`:`<button class="small" onclick="auditionProject('${p.id}')">去试镜 ·1行动力</button>`}<button class="small danger" onclick="refuseProject('${p.id}')">放弃</button></div>`:""}</div>`}).join("")}`}
+function renderSkills(){v4Init(S);return `<div class="skill-table">${Object.entries(SKILLS).map(([k,v])=>{const mid=S.mastery[k],m=mid&&MASTERY[k].find(x=>x.id===mid);return `<div class="skill-cell ${m?"mastered":""} ${!m&&S.masteryPending.includes(k)?"pending":""}"><b>${Math.round(S.skills[k])}</b><span>${v}</span>${m?`<i>◆${esc(m.name)}</i>`:S.masteryPending.includes(k)?`<i class="wait">待专精</i>`:""}</div>`}).join("")}</div>`}
+function renderSchedule(){const f=calculateForecast(S),future=[0,1,2].map(d=>{const m=S.month+d,l=monthLoad(S,m);return `<div class="schedule-line"><span class="month">${m>MAX_MONTH?"-—":`第${m}月`}</span><div class="bar"><i style="width:${Math.min(100,l*100)}%;background:${l>1?"var(--red)":"var(--cyan)"}"></i></div><span class="pct ${l>1?"down":""}">${Math.round(l*100)}%</span></div>`}).join("");const active=f.active.length?f.active.map(p=>`<div class="card"><div class="row"><div><span class="type">${PROJECT_TYPES[p.type].name}</span><h3>${p.title}</h3></div><span class="pill blue">至第${p.endMonth}月</span></div><div class="copy">当月负荷 ${Math.round(p.load*100)}% · 合同片酬 ${p.fee}万 · 主要考验 ${SKILLS[p.skill]}</div></div>`).join(""):`<div class="empty">当月没有已签项目。没有曝光很安静，也会被忘记。</div>`;const fee=currentBreakFee(S);$("#panel").innerHTML=`<div class="metric-grid"><div class="metric"><div class="v">${f.active.length}</div><div class="k">当月项目</div></div><div class="metric"><div class="v ${f.load>1?"down":""}">${Math.round(f.load*100)}%</div><div class="k">档期负荷</div></div><div class="metric"><div class="v ${f.net>=0?"up":"down"}">${f.net>=0?"+":""}${f.net}万</div><div class="k">预计净额</div></div></div><div class="card"><div class="section-head"><h2>未来三月档期</h2><span>超过100%会影响作品和健康</span></div>${future}</div>${active}<div class="card contract"><div class="row"><div><h3>${currentCompany(S).name}</h3><span class="pill gold">${S.independent?"独立经营":"经纪合约"}</span></div><div class="number">艺人分成 <b>${Math.round(playerShare(S)*100)}%</b></div></div><div class="copy">${S.independent?"项目、公关和团队成本都由你自己承担。":`当前解约金约${fee}万。可以随时提出解约，但公司不会轻易放人。`}</div>${S.independent?"":`<div class="card-actions"><button class="small danger" onclick="requestBreakContract()">提出解约</button></div>`}</div><div class="section-head"><h2>专业能力</h2><span>训练和项目都能提升</span></div>${renderSkills()}${renderOmens()}`}
+function renderProjects(){$("#panel").innerHTML=`<div class="section-head"><h2>本月项目池</h2><span>1个公司安排 + 5个市场机会</span></div>${S.projects.map(p=>{const chance=auditionChance(S,p),max=projectedMaxLoad(S,p);return `<div class="card project-card ${p.status}"><div class="row"><div><span class="source">${p.source==="company"?"公司安排":p.source==="studio"?"工作室推荐":p.source==="selfmade"?"厂牌自制":"市场机会"}</span><span class="type">${PROJECT_TYPES[p.type].name}</span><h3>${p.title}</h3></div><span class="pill ${p.status==="accepted"?"green":p.status==="lost"?"red":"blue"}">${p.status==="accepted"?"已签约":p.status==="lost"?"已失去":p.direct?"直接邀约":"待决定"}</span></div><div class="copy">${p.desc}</div><div class="attrs"><span class="attr">档期 ${p.duration}月</span><span class="attr">负荷 ${Math.round(p.load*100)}%</span><span class="attr">片酬 ${p.fee}万</span><span class="attr">${SKILLS[p.skill]} ${Math.round(S.skills[p.skill])}</span>${p.source==="market"&&!p.direct?`<span class="attr">${chanceText(chance)}</span>`:""}${max>1?`<span class="attr warning">最高负荷${Math.round(max*100)}%</span>`:""}${projectFlags(p)}</div>${p.status==="open"?`<div class="card-actions">${p.contested&&!p.contestResolved?`<button class="small" onclick="acceptProject('${p.id}')">去争这个位置 ·1行动力</button>`:p.source!=="market"||p.direct?`<button class="small" onclick="acceptProject('${p.id}')">接受</button><button class="small" onclick="negotiateProject('${p.id}')">谈条件</button>`:`<button class="small" onclick="auditionProject('${p.id}')">去试镜 ·1行动力</button>`}<button class="small danger" onclick="refuseProject('${p.id}')">放弃</button></div>`:""}</div>`}).join("")}`}
 function setTeamFilter(v){S.teamFilter=v;renderTeam()}
-function renderTeam(){const labels={all:"全部",standby:"候补",vacancy:"空缺",manager:"经纪",executive:"执行",assistant:"助理",pr:"宣传",stylist:"造型",coach:"老师"},filters=["all","standby","vacancy",...TEAM_SLOTS.map(x=>x.id)];let html=`<div class="subnav">${filters.map(k=>`<button class="${S.teamFilter===k?"on":""}" onclick="setTeamFilter('${k}')">${labels[k]}</button>`).join("")}</div><div class="forecast"><span>实名团队 <b>${S.team.length}</b>人</span><span>候补 <b class="${standbyTeam(S).length?"down":"up"}">${standbyTeam(S).length}</b>人</span><span>月工资 <b>${totalPayroll(S)}万</b></span></div>`;if(S.teamFilter==="vacancy"){const rows=TEAM_SLOTS.filter(x=>!teamMember(S,x.id));html+=rows.length?rows.map(x=>`<div class="card vacancy"><div class="row"><h3>${x.name}</h3><span class="pill red">空缺</span></div><div class="copy">需要从候补人员中安排一名符合岗位的人。</div></div>`).join(""):`<div class="empty">个人团队已经配齐。</div>`}else{const rows=S.team.filter(x=>S.teamFilter==="all"||(S.teamFilter==="standby"&&!x.role)||x.role===S.teamFilter);html+=rows.length?rows.map(m=>`<div class="card"><div class="person-head"><div class="avatar">${m.name.slice(0,1)}</div><div class="person-main"><div class="row"><div><h3>${m.name}</h3> <span class="pill ${m.role?"blue":"red"}">${m.role?TEAM_MAP[m.role].name:"候补"}</span> <span class="pill">${m.faction}</span></div><div class="number">月薪 <b>${m.salary}万</b></div></div><div class="attrs"><span class="attr">能力 ${m.skill}</span><span class="attr">忠诚 ${m.loyalty}</span><span class="attr">好感 ${m.fav}</span><span class="attr">可任 ${m.eligible.map(x=>TEAM_MAP[x].name).join("/")}</span></div><div class="copy">${m.trait}</div><div class="card-actions">${!m.role?`<button class="small" onclick="chooseTeamAssignment(${m.id})">安排岗位</button>`:`<button class="small" onclick="moveTeamToStandby(${m.id})">调为候补</button>`}<button class="small danger" onclick="dismissTeam(${m.id})">解约</button></div></div></div></div>`).join(""):`<div class="empty">这个分类里没有人员。</div>`}$("#panel").innerHTML=html}
+function renderTeam(){const labels={all:"全部",standby:"候补",vacancy:"空缺",manager:"经纪",executive:"执行",assistant:"助理",pr:"宣传",stylist:"造型",coach:"老师"},filters=["all","standby","vacancy",...TEAM_SLOTS.map(x=>x.id)];let html=`<div class="subnav">${filters.map(k=>`<button class="${S.teamFilter===k?"on":""}" onclick="setTeamFilter('${k}')">${labels[k]}</button>`).join("")}</div><div class="forecast"><span>实名团队 <b>${S.team.length}</b>人</span><span>候补 <b class="${standbyTeam(S).length?"down":"up"}">${standbyTeam(S).length}</b>人</span><span>月工资 <b>${totalPayroll(S)}万</b></span></div>${renderStudioCard()}`;if(S.teamFilter==="vacancy"){const rows=TEAM_SLOTS.filter(x=>!teamMember(S,x.id));html+=rows.length?rows.map(x=>`<div class="card vacancy"><div class="row"><h3>${x.name}</h3><span class="pill red">空缺</span></div><div class="copy">需要从候补人员中安排一名符合岗位的人。</div></div>`).join(""):`<div class="empty">个人团队已经配齐。</div>`}else{const rows=S.team.filter(x=>S.teamFilter==="all"||(S.teamFilter==="standby"&&!x.role)||x.role===S.teamFilter);html+=rows.length?rows.map(m=>`<div class="card"><div class="person-head"><div class="avatar">${m.name.slice(0,1)}</div><div class="person-main"><div class="row"><div><h3>${m.name}</h3> <span class="pill ${m.role?"blue":"red"}">${m.role?TEAM_MAP[m.role].name:"候补"}</span> <span class="pill">${m.faction}</span></div><div class="number">月薪 <b>${m.salary}万</b></div></div><div class="attrs"><span class="attr">能力 ${m.skill}</span><span class="attr">忠诚 ${m.loyalty}</span><span class="attr">好感 ${m.fav}</span><span class="attr">可任 ${m.eligible.map(x=>TEAM_MAP[x].name).join("/")}</span></div><div class="copy">${m.trait}</div><div class="card-actions">${!m.role?`<button class="small" onclick="chooseTeamAssignment(${m.id})">安排岗位</button>`:`<button class="small" onclick="moveTeamToStandby(${m.id})">调为候补</button>`}<button class="small danger" onclick="dismissTeam(${m.id})">解约</button></div></div></div></div>`).join(""):`<div class="empty">这个分类里没有人员。</div>`}$("#panel").innerHTML=html}
 function setRelationFilter(v){S.relationFilter=v;renderRelations()}
 function orientationAllows(n){if(!n.romance||S.orientation==="none")return false;if(S.orientation==="both")return true;return S.orientation==="same"?n.gender===S.gender:n.gender!==S.gender}
-function renderRelations(){const groups=["all","公司","制作","平台","品牌","媒体","粉圈","艺人"];let html=`<div class="subnav">${groups.map(k=>`<button class="${S.relationFilter===k?"on":""}" onclick="setRelationFilter('${k}')">${k==="all"?"全部":k}</button>`).join("")}</div><div class="forecast"><span>每人每月只能正式见一次</span><span>好感60解锁资源</span></div>`;html+=S.npcs.filter(n=>S.relationFilter==="all"||n.group===S.relationFilter).map(n=>{const dating=S.romanceId===n.id;return `<div class="card ${dating?"romance":""}"><div class="person-head"><div class="avatar">${n.name.slice(0,1)}</div><div class="person-main"><div class="row"><div><h3>${n.name}</h3> <span class="pill">${n.group}</span>${n.id===bossId(S)?' <span class="pill gold">本公司</span>':""}${n.id==="rival_main"?' <span class="pill red">宿敌</span>':""}</div><div class="number">好感 <b>${n.fav}</b></div></div><div class="meta">${n.title}</div><div class="progress"><i style="width:${n.fav}%;background:${n.fav>=60?"var(--green)":"var(--cyan)"}"></i></div><div class="copy">${n.hint}</div><div class="copy ${n.fav>=60?"up":""}">${n.fav>=60?"已建立稳定关系：":"好感60解锁："}${n.perk}</div><div class="card-actions"><button class="small" ${n.lastMet===S.month||S.energy<=0?"disabled":""} onclick="interactNpc('${n.id}','report')">正式拜访</button><button class="small" ${n.lastMet===S.month||S.energy<=0?"disabled":""} onclick="interactNpc('${n.id}','dinner')">私下用餐 3万</button><button class="small" ${n.lastMet===S.month||S.energy<=0?"disabled":""} onclick="interactNpc('${n.id}','help')">帮忙牵线 8万</button>${orientationAllows(n)&&n.fav>=65?dating?`<button class="small danger" onclick="romanceMenu('${n.id}')">恋情选项</button>`:!S.romanceId?`<button class="small" onclick="pursueRomance('${n.id}')">试着靠近</button>`:"":""}</div></div></div></div>`}).join("");$("#panel").innerHTML=html}
+function renderRelations(){const groups=["all","公司","制作","平台","品牌","媒体","粉圈","艺人"];let html=`<div class="subnav">${groups.map(k=>`<button class="${S.relationFilter===k?"on":""}" onclick="setRelationFilter('${k}')">${k==="all"?"全部":k}</button>`).join("")}</div><div class="forecast"><span>每人每月只能正式见一次</span><span>好感60解锁资源</span></div>`;html+=S.npcs.filter(n=>S.relationFilter==="all"||n.group===S.relationFilter).map(n=>{const dating=S.romanceId===n.id;return `<div class="card ${dating?"romance":""}"><div class="person-head"><div class="avatar">${n.name.slice(0,1)}</div><div class="person-main"><div class="row"><div><h3>${n.name}</h3> <span class="pill">${n.group}</span>${n.id===bossId(S)?' <span class="pill gold">本公司</span>':""}${n.id==="rival_main"?' <span class="pill red">宿敌</span>':""}</div><div class="number">好感 <b>${n.fav}</b></div></div><div class="meta">${n.title}</div><div class="progress"><i style="width:${n.fav}%;background:${n.fav>=60?"var(--green)":"var(--cyan)"}"></i></div><div class="copy">${n.hint}</div><div class="copy ${n.fav>=60?"up":""}">${n.fav>=60?"已建立稳定关系：":"好感60解锁："}${n.perk}</div><div class="card-actions"><button class="small" ${n.lastMet===S.month||S.energy<=0?"disabled":""} onclick="interactNpc('${n.id}','report')">正式拜访</button><button class="small" ${n.lastMet===S.month||S.energy<=0?"disabled":""} onclick="interactNpc('${n.id}','dinner')">私下用餐 3万</button><button class="small" ${n.lastMet===S.month||S.energy<=0?"disabled":""} onclick="interactNpc('${n.id}','help')">帮忙牵线 8万</button>${S.cpContract&&S.cpContract.id===n.id?`<button class="small" onclick="cpMenu()">CP营业中</button>`:cpEligible(S,n)?`<button class="small" onclick="cpPropose('${n.id}')">谈一次CP营业 ·1行动力</button>`:""}${orientationAllows(n)&&n.fav>=65?dating?`<button class="small danger" onclick="romanceMenu('${n.id}')">恋情选项</button>`:!S.romanceId?`<button class="small" onclick="pursueRomance('${n.id}')">试着靠近</button>`:"":""}</div></div></div></div>`}).join("");$("#panel").innerHTML=html}
 function renderTrends(){const open=S.trends.filter(t=>t.status==="open").length;$("#panel").innerHTML=`<div class="section-head"><h2>本月热搜与舆情</h2><span>待处理 ${open}条</span></div><div class="forecast"><span>沉默不消耗行动力</span><span>回应、道歉、否认和起诉消耗1点</span></div>${S.trends.length?S.trends.map(t=>`<div class="card trend-card ${t.kind}"><div class="row"><div><span class="type">#${t.severity<=1?"上升":t.severity===2?"沸":"爆"}#</span><h3>${esc(t.title)}</h3></div><span class="pill ${t.status==="open"?"red":"green"}">${t.status==="open"?"待处理":"已处理"}</span></div><div class="copy">${esc(t.body)}</div>${t.status==="open"?`<div class="card-actions"><button class="small" onclick="handleTrend('${t.id}','silence')">保持沉默</button><button class="small" onclick="handleTrend('${t.id}','statement')">发声明</button><button class="small" onclick="handleTrend('${t.id}','apology')">道歉</button><button class="small" onclick="handleTrend('${t.id}','deny')">否认</button><button class="small" onclick="handleTrend('${t.id}','sue')">起诉 8万</button><button class="small danger" onclick="handleTrend('${t.id}','lower')">压热度 12万</button></div>`:""}</div>`).join(""):`<div class="empty">本月还没有与你有关的热搜。</div>`}`}
 function renderRank(){const rows=S.competitors.map(c=>({name:c.name,route:c.route,score:c.score,me:false,main:c.main}));rows.push({name:S.playerName,route:personaTags(S).join("/")||"尚未定型",score:playerScore(S),me:true});rows.sort((a,b)=>b.score-a.score);$("#panel").innerHTML=`<table class="rank-table"><tr><th>#</th><th>艺人</th><th>路线</th><th>综合分</th></tr>${rows.map((r,i)=>`<tr class="${r.me?"me":""}"><td>${i+1}</td><td>${esc(r.name)}${r.main?" · 宿敌":""}</td><td>${r.route}</td><td>${round(r.score,1)}</td></tr>`).join("")}</table><div class="copy" style="margin-top:8px">综合分由知名度、路人缘、商业价值、代表作和奖项构成。五位竞争艺人也会接项目、爆红或翻车。</div><div class="section-head"><h2>宿敌擂台</h2><span>${S.duel.wins}胜 ${S.duel.losses}负 · 下次约在第${S.duel.next}月</span></div>${S.duel.log.length?S.duel.log.slice().reverse().map(d=>`<div class="duel-row"><span>第${d.m}月 · ${d.stage}</span><b class="${d.win?"w":"l"}">${d.win?"胜":"负"} ${d.score}</b></div>`).join(""):`<div class="empty">还没有正面交过手。点顶部「约战」可以提前下战书。</div>`}`}
 function renderLog(){$("#panel").innerHTML=`<div class="log">${S.log.map(x=>`<p class="${x.cls||""}">${esc(x.text)}</p>`).join("")}</div>`}
@@ -362,15 +397,15 @@ function renderPanel(){({schedule:renderSchedule,projects:renderProjects,team:re
 function switchTab(tab){S.tab=tab;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));renderPanel();save()}
 function renderAll(){if(typeof document==="undefined"||!S)return;seedTicker();$("#monthText").textContent=S.month;$("#energyDots").textContent="●".repeat(S.energy)+"○".repeat(4-S.energy);renderStats();renderForecast();renderProfile();renderActions();document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===S.tab));renderPanel();save()}
 
-function actTrain(){if(!needEnergy())return;showModal("业务训练","训练会提升专业能力，也会消耗一点身心状态。",Object.entries(SKILLS).map(([k,v])=>eventOption(`集中训练${v}`,`${v}+5，身心小幅下降`,()=>{S.skills[k]=clamp(S.skills[k]+5);add(S,"health",-1);add(S,"mental",-2);spend()})).concat([eventOption("取消","",()=>{})]))}
+function actTrain(){if(!needEnergy())return;showModal("业务训练","训练会提升专业能力，也会消耗一点身心状态。水平越高，同样的时间换来的进步越少。",Object.entries(SKILLS).map(([k,v])=>eventOption(`集中训练${v}`,masteryTip(S,k),()=>{const g=trainGain(S,k),c=trainCost(S);gainSkill(S,k,g.total);add(S,"health",c.h);add(S,"mental",c.m);spend();flushMastery()})).concat([eventOption("取消","",()=>{})]))}
 function actRest(){if(!needEnergy())return;showModal("给自己留一天","经纪人问你：是真休息，还是边休息边营业？",[eventOption("关机睡觉","健康+10，心理+8，隐患缓解",()=>{add(S,"health",10);add(S,"mental",8);risk(S,"health",-7);risk(S,"mental",-7);spend()}),eventOption("去近郊放空","花3万，心理+12，私生活风险小幅上升",()=>{add(S,"cash",-3);add(S,"mental",12);add(S,"health",4);risk(S,"privacy",3);spend()}),eventOption("取消","",()=>{})])}
-function actPublicity(){if(!needEnergy())return;showModal("主动营业","没有热搜时也可以主动建立公众形象。",[eventOption("拍一组日常内容","花3万，路人缘+2，粉丝+3",()=>{add(S,"cash",-3);add(S,"publicFavor",2);add(S,"fans",3);S.persona.idol+=2;spend()}),eventOption("参加公益活动","花8万，路人缘+5，公益形象提升",()=>{add(S,"cash",-8);add(S,"publicFavor",5);S.persona.public+=4;spend()}),eventOption("开一场粉丝直播","现金+5万，粉丝+5，粉圈风险上升",()=>{add(S,"cash",5);add(S,"fans",5);add(S,"commercial",2);risk(S,"fandom",5);S.persona.business+=2;spend()}),eventOption("取消","",()=>{})])}
+function actPublicity(){if(!needEnergy())return;const k=studioActBonus(S),n=v=>Math.round(v*k*10)/10,tail=k>1?"（内容组加成）":"";showModal("主动营业","没有热搜时也可以主动建立公众形象。",[eventOption("拍一组日常内容",`花3万，路人缘+${n(2)}，粉丝+${n(3)}${tail}`,()=>{add(S,"cash",-3);add(S,"publicFavor",2*k);add(S,"fans",3*k);S.persona.idol+=2;spend()}),eventOption("参加公益活动",`花8万，路人缘+${n(5)}，公益形象提升${tail}`,()=>{add(S,"cash",-8);add(S,"publicFavor",5*k);S.persona.public+=4;spend()}),eventOption("开一场粉丝直播",`现金+5万，粉丝+${n(5)}，粉圈风险上升`,()=>{add(S,"cash",5);add(S,"fans",5*k);add(S,"commercial",2);risk(S,"fandom",5);S.persona.business+=2;spend()}),eventOption("取消","",()=>{})])}
 function actTeam(){if(!needEnergy())return;showModal("管理个人团队","个人团队的岗位有限。新签的人会先进入候补，有空缺时再安排上岗。",[eventOption("查看团队和编制","不花行动力",()=>switchTab("team")),eventOption("面试本月候选人","签下一人花1行动力",()=>showTeamCandidates()),eventOption("发一次团队奖金","花20万，所有人忠诚和好感提升",()=>{add(S,"cash",-20);S.team.forEach(m=>{m.loyalty=clamp(m.loyalty+8);m.fav=clamp(m.fav+6)});risk(S,"team",-10);spend()},S.cash<20),eventOption("取消","",()=>{})])}
 function showTeamCandidates(){showModal("本月团队候选人","签约后先进入候补名单。候补人员也会产生工资和不满。",S.candidates.map(c=>eventOption(`${c.name} · ${c.eligible.map(x=>TEAM_MAP[x].name).join("/")}`,`能力${c.skill} · 忠诚${c.loyalty} · 月薪${c.salary}万 · ${c.trait}`,()=>{S.team.push(c);S.candidates=S.candidates.filter(x=>x.id!==c.id);S.track.hires++;gameLog(S,"good",`${c.name}签约加入团队，当前处于候补。`);spend()})).concat([eventOption("都不合适","不花行动力",()=>{})]))}
 function chooseTeamAssignment(id){const m=S.team.find(x=>x.id===id);if(!m)return;const rows=TEAM_SLOTS.filter(x=>m.eligible.includes(x.id)&&!teamMember(S,x.id));if(!rows.length){showModal("没有合适空缺",`${m.name}适合的岗位都已经有人。必须先让原来的人转为候补或解约。`,[{text:"知道了"}]);return}showModal(`安排${m.name}上岗`,"选择一个空缺岗位。",rows.map(x=>eventOption(x.name,"安排后立即生效",()=>{m.role=x.id;m.fav=clamp(m.fav+5);m.loyalty=clamp(m.loyalty+3);S.track.teamMoves++;gameLog(S,"good",`${m.name}被安排为${x.name}。`);renderAll()})))}
 function moveTeamToStandby(id){const m=S.team.find(x=>x.id===id);if(!m||!m.role)return;const old=TEAM_MAP[m.role].name;showModal(`调离${m.name}`,`确定让${m.name}离开${old}岗位，转为候补？原岗位会立即空出。`,[eventOption("确认调离","好感-10，团队隐患上升",()=>{m.role=null;m.fav=clamp(m.fav-10);m.loyalty=clamp(m.loyalty-7);risk(S,"team",6);S.track.teamMoves++;renderAll()}),eventOption("取消","",()=>{})])}
 function dismissTeam(id){const m=S.team.find(x=>x.id===id);if(!m)return;showModal(`与${m.name}解约`,`确定让${m.name}离开团队？${m.role?TEAM_MAP[m.role].name+"岗位会立即空出。":"候补工资将停止。"}`,[eventOption("确认解约","团队风险上升，可能引发爆料",()=>{S.team=S.team.filter(x=>x.id!==id);risk(S,"team",10);risk(S,"privacy",m.loyalty<45?8:2);S.track.fires++;gameLog(S,"bad",`${m.name}离开了个人团队。`);renderAll()}),eventOption("取消","",()=>{})])}
-function interactNpc(id,method){if(!needEnergy())return;const n=S.npcs.find(x=>x.id===id);if(!n||n.lastMet===S.month)return;const costs={report:0,dinner:3,help:8};if(S.cash<costs[method]){showModal("现金不足","这次安排需要更多现金。",[{text:"知道了"}]);return}let delta=method===n.pref?8:method===n.avoid?-3:4;if(n.lastMethod===method){n.repeat++;delta=Math.max(1,delta-n.repeat*2)}else n.repeat=0;n.lastMethod=method;n.lastMet=S.month;n.tried[method]=delta;add(S,"cash",-costs[method]);relation(S,id,delta);S.track.relations++;if(method==="help"&&["zhou","han","lin","fang"].includes(id)){risk(S,"contract",3);S.track.gray++}spend();const text=delta>=7?"你说到了对方关心的事。分开前，对方主动提到了下一次合作。":delta<0?"对方礼貌地把话题岔开。这种方式并不适合他。":"谈话不坏，但还没到可以开口要资源的地步。";showModal(`${n.name} · ${method==="report"?"正式拜访":method==="dinner"?"私下用餐":"帮忙牵线"}`,`${text}
+function interactNpc(id,method){if(!needEnergy())return;const n=S.npcs.find(x=>x.id===id);if(!n||n.lastMet===S.month)return;const costs={report:0,dinner:3,help:8};if(S.cash<costs[method]){showModal("现金不足","这次安排需要更多现金。",[{text:"知道了"}]);return}let delta=method===n.pref?8:method===n.avoid?-3:4;if(n.lastMethod===method){n.repeat++;delta=Math.max(1,delta-n.repeat*2)}else n.repeat=0;if(delta>0&&hasMastery(S,"social","insider"))delta=Math.round(delta*1.3); /* 局中人 */n.lastMethod=method;n.lastMet=S.month;n.tried[method]=delta;add(S,"cash",-costs[method]);relation(S,id,delta);S.track.relations++;if(method==="help"&&["zhou","han","lin","fang"].includes(id)){risk(S,"contract",3);S.track.gray++}spend();const text=delta>=7?"你说到了对方关心的事。分开前，对方主动提到了下一次合作。":delta<0?"对方礼貌地把话题岔开。这种方式并不适合他。":"谈话不坏，但还没到可以开口要资源的地步。";showModal(`${n.name} · ${method==="report"?"正式拜访":method==="dinner"?"私下用餐":"帮忙牵线"}`,`${text}
 
 好感${delta>=0?"+":""}${delta}${costs[method]?`，花费${costs[method]}万`:""}。`,[{text:"告辞"}])}
 function pursueRomance(id){if(!needEnergy()||S.romanceId)return;const n=S.npcs.find(x=>x.id===id);if(!orientationAllows(n)||n.fav<65)return;showModal(`试着靠近${n.name}`,"这不是一次营业安排。真实关系会给你带来支持，也会变成媒体和粉圈的突破口。",[eventOption("说出真心话","建立秘密恋情，心理+8，私生活风险上升",()=>{S.romanceId=id;relation(S,id,8);add(S,"mental",8);risk(S,"privacy",12);gameLog(S,"good",`你和${n.name}开始了一段没有对外公开的关系。`);spend()}),eventOption("还是做朋友","不花行动力",()=>{})])}
@@ -469,35 +504,35 @@ const RISK_WARNINGS={
 };
 function resolveIgnoredTrend(s,t){t.status="ignored";if(t.kind==="good"){add(s,"publicFavor",1);add(s,"fans",1)}else{add(s,"publicFavor",-t.severity);add(s,"fans",t.severity>=3?-2:0);risk(s,"fandom",t.severity*2);if(t.title.includes("恋情")||t.title.includes("行程"))risk(s,"privacy",t.severity*3)}if(t.kind==="crisis"&&t.severity>=2)addPrior(s,t);gameLog(s,t.kind==="good"?"good":"bad",`热搜「${t.title}」在未回应的情况下自然发酵。`)}
 function projectPersona(s,p){if(["film","drama"].includes(p.type))s.persona.actor+=4;if(p.type==="variety")s.persona.variety+=5;if(["music","stage"].includes(p.type))s.persona.music+=5;if(p.type==="endorsement"){s.persona.fashion+=3;s.persona.business+=4}if(p.type==="live")s.persona.business+=4;if(p.type==="public")s.persona.public+=5}
-function completeProject(s,p,rng=Math.random){const load=monthLoad(s,s.month),company=currentCompany(s),coach=teamPower(s,"coach"),support=teamPower(s,"executive")+teamPower(s,"assistant")*.4+(p.type==="endorsement"?teamPower(s,"stylist")*.5:0),base=s.skills[p.skill]*.57+s.health*.11+s.mental*.1+coach*9+support*5+(company.quality||0)+(rng()-.5)*25-Math.max(0,load-1)*32+(p.saved?6:0)-(p.tainted?8:0)+(p.prep||0)+fandomQualityBonus(s)-(s.fandom&&s.fandom.anti>=70?4:0),quality=clamp(Math.round(base),10,99);let tier="反响平平",mult=.55;if(quality>=88){tier="爆款";mult=1.75;s.track.hits++}else if(quality>=74){tier="口碑成功";mult=1.25;s.track.hits++}else if(quality>=58){tier="平稳完成";mult=.9}else if(quality<40){tier="翻车";mult=.2;s.track.flops++}const bill=p.topBilling?1.45:1;add(s,"fame",p.fameGain*mult*bill);add(s,"publicFavor",p.repGain*mult+(quality<40?-5:0));add(s,"commercial",p.commercialGain*mult*bill);add(s,"fans",p.fanGain*mult*bill+(quality<40?-4:0));s.skills[p.skill]=clamp(s.skills[p.skill]+Math.max(1,p.duration));s.track.projects++;s.track[p.type]=(s.track[p.type]||0)+1;s.track.bestQuality=Math.max(s.track.bestQuality,quality);if(quality>=82&&["film","drama","music","stage"].includes(p.type))s.track.nominations++;projectPersona(s,p);gameLog(s,quality>=74?"good":quality<40?"bad":"",`${p.title}完成，内部成片评估${quality}分，${tier}。`);if(s.flags&&s.flags.method&&["film","drama"].includes(p.type))add(s,"health",-3);tickerPush(`#${esc(p.title)}${quality>=88?"爆了":quality<40?"翻车":"开播"}#`,quality>=88?"gold":quality<40?"red":"");if(quality>=88){splash("爆 款",`${p.title} · ${quality}分`,"good");starfall(24);feat(s,"拿下一部爆款")}else if(quality<40){splash("翻 车",`${p.title} · ${quality}分`,"bad")}return{title:p.title,type:p.type,quality,tier,topBilling:!!p.topBilling,cpOffer:["film","drama"].includes(p.type)&&quality>=58&&rng()<.55}}
+function completeProject(s,p,rng=Math.random){const load=monthLoad(s,s.month),company=currentCompany(s),coach=teamPower(s,"coach"),support=teamPower(s,"executive")+teamPower(s,"assistant")*.4+(p.type==="endorsement"?teamPower(s,"stylist")*.5:0),base=s.skills[p.skill]*.57+s.health*.11+s.mental*.1+coach*9+support*5+(company.quality||0)+(rng()-.5)*25-Math.max(0,load-1)*32+(p.saved?6:0)-(p.tainted?8:0)+(p.prep||0)+fandomQualityBonus(s)-(s.fandom&&s.fandom.anti>=70?4:0)+masteryQuality(s,p)+(p.progress||0)*3,quality=clamp(Math.round(base),masteryFloor(s,p),99);let tier="反响平平",mult=.55;if(quality>=88){tier="爆款";mult=1.75;s.track.hits++}else if(quality>=74){tier="口碑成功";mult=1.25;s.track.hits++}else if(quality>=58){tier="平稳完成";mult=.9}else if(quality<40){tier="翻车";mult=.2;s.track.flops++}const bill=p.topBilling?1.45:1;add(s,"fame",p.fameGain*mult*bill);add(s,"publicFavor",p.repGain*mult*masteryRepMul(s,p)+(quality<40?-5:0));add(s,"commercial",p.commercialGain*mult*bill);add(s,"fans",p.fanGain*mult*bill*cpProjectMul(s,p)+(quality<40?-4:0));gainSkill(s,p.skill,Math.max(1,p.duration));s.track.projects++;s.track[p.type]=(s.track[p.type]||0)+1;s.track.bestQuality=Math.max(s.track.bestQuality,quality);if(quality>=masteryNomLine(s)&&["film","drama","music","stage"].includes(p.type))s.track.nominations++;masteryOnComplete(s,p);if(p.source==="selfmade")studioPayout(s,p,quality);projectPersona(s,p);gameLog(s,quality>=74?"good":quality<40?"bad":"",`${p.title}完成，内部成片评估${quality}分，${tier}。`);if(s.flags&&s.flags.method&&["film","drama"].includes(p.type))add(s,"health",-3);tickerPush(`#${esc(p.title)}${quality>=88?"爆了":quality<40?"翻车":"开播"}#`,quality>=88?"gold":quality<40?"red":"");if(quality>=88){splash("爆 款",`${p.title} · ${quality}分`,"good");starfall(24);feat(s,"拿下一部爆款")}else if(quality<40){splash("翻 车",`${p.title} · ${quality}分`,"bad")}return{title:p.title,type:p.type,quality,tier,topBilling:!!p.topBilling,cpOffer:["film","drama"].includes(p.type)&&quality>=58&&rng()<.55}}
 function advanceCompetitors(s,rng=Math.random){s.competitors.forEach(c=>{let growth=.45+c.momentum*.7+(rng()-.5)*1.5;if(rng()<.08)growth+=rng()*5;if(rng()<.035)growth-=rng()*6;c.score=clamp(c.score+growth,12,125)});const main=s.competitors.find(c=>c.main),rel=s.npcs.find(n=>n.id==="rival_main");if(main&&rel&&rel.fav>=75)main.score+=.2}
-function settleCore(s,rng=Math.random){const before={cash:s.cash,fame:s.fame,publicFavor:s.publicFavor,commercial:s.commercial,fans:s.fans,condition:(s.health+s.mental)/2,coherence:s.image.coherence},active=activeInMonth(s,s.month),load=active.reduce((a,p)=>a+p.load,0),gross=active.reduce((a,p)=>a+p.fee*playerShare(s)/p.duration,0),payroll=totalPayroll(s),tax=round(gross*.08,1),over=load>1?round((load-1)*12,1):0,expense=round(payroll+3+tax+over,1),net=round(gross-expense,1);add(s,"cash",net);s.track.income+=gross;s.track.expense+=expense;s.trends.filter(t=>t.status==="open").forEach(t=>resolveIgnoredTrend(s,t));if(load>.75){const hp=Math.max(1,(load-.65)*8),mp=Math.max(1,(load-.55)*7);add(s,"health",-hp);add(s,"mental",-mp);risk(s,"health",load>1?8:3);risk(s,"mental",load>1?7:2);risk(s,"team",load>1?6:1)}else if(load<.3){add(s,"health",3);add(s,"mental",2);const dec=s.fame>=80?4:s.fame>=60?2:1;add(s,"fame",-dec);if(dec>=2)gameLog(s,"bad",`空窗期：没有新曝光，热度回落${dec}点。位置越高，观众忘得越快。`)}if(standbyTeam(s).length){risk(s,"team",standbyTeam(s).length*3);s.team.filter(x=>!x.role).forEach(x=>x.fav=clamp(x.fav-2))}if(s.cash<0){risk(s,"contract",8);risk(s,"tax",5);add(s,"mental",-4)}if(s.flags.taxPlan&&s.flags.taxPlan>=s.month)risk(s,"tax",3);let incident=null;const ongoing=s.activeProjects.filter(p=>p.endMonth>s.month&&!p.incidentDone);if(ongoing.length&&rng()<.07){const ip=pick(ongoing);ip.incidentDone=true;incident={id:ip.id,title:ip.title,kind:pick(["scandal","funding","shelved"])}}const completed=active.filter(p=>p.endMonth===s.month).map(p=>completeProject(s,p,rng));s.activeProjects=s.activeProjects.filter(p=>p.endMonth>s.month);advanceCompetitors(s,rng);s.team.forEach(m=>{if(load>1)m.loyalty=clamp(m.loyalty-2);else if(load<.65)m.loyalty=clamp(m.loyalty+1)});if(hasTalent(s,"koi")&&rng()<.08){add(s,"publicFavor",3);add(s,"fame",2);gameLog(s,"good","锦鲤体质发动：一条路人拍的偶遇视频意外出圈，热度和好感悄悄上涨。")}if(s.image.established){s.image.coherence=clamp(s.image.coherence-1);const gap=60-s.image.coherence;if(gap>0)risk(s,"image",Math.max(1,Math.round(gap/8)));else s.risks.image=clamp((s.risks.image||0)-2,0,120);if(s.image.heat>0){risk(s,"image",Math.min(6,s.image.heat));s.image.heat=Math.max(0,s.image.heat-1)}if(s.image.coherence<30&&s.image.believers>0){const lost=Math.ceil(s.image.believers*.08);s.image.believers=Math.max(0,s.image.believers-lost);add(s,"fans",-lost);add(s,"publicFavor",-2);risk(s,"fandom",3);gameLog(s,"bad","人设摇摇欲坠，一批信仰粉开始脱粉回踩。")}}s.image.believers=Math.min(s.image.believers,Math.max(0,s.fans));fandomSettle(s);if(s.flags&&s.flags.phoenix){if(s.health<20){s.health=35;s.flags.phoenix=0;gameLog(s,"good","不死鸟：你在体检报告前咬着牙站了起来。");}else if(s.mental<20){s.mental=35;s.flags.phoenix=0;gameLog(s,"good","不死鸟：你没有倒下，只是安静了一个月。")}}s.track.maxFame=Math.max(s.track.maxFame,s.fame);s.track.minCondition=Math.min(s.track.minCondition,(s.health+s.mental)/2);s.last={income:round(gross,1),expense,net,load,active:active.length,payroll,tax,over};s.lastDelta={cash:s.cash-before.cash,fame:s.fame-before.fame,publicFavor:s.publicFavor-before.publicFavor,commercial:s.commercial-before.commercial,fans:s.fans-before.fans,condition:(s.health+s.mental)/2-before.condition,image:s.image.coherence-before.coherence};return{...s.last,completed,incident}}
-function chooseEvent(){const rows=EVENTS.filter(e=>(!e.cond||e.cond())&&!S.usedEvents.includes(e.id)&&e.id!==S.lastEvent);if(!rows.length)return null;const e=pick(rows);S.lastEvent=e.id;if(e.once)S.usedEvents.push(e.id);return e}
+function settleCore(s,rng=Math.random){const before={cash:s.cash,fame:s.fame,publicFavor:s.publicFavor,commercial:s.commercial,fans:s.fans,condition:(s.health+s.mental)/2,coherence:s.image.coherence},active=activeInMonth(s,s.month),load=active.reduce((a,p)=>a+p.load,0),gross=active.reduce((a,p)=>a+p.fee*masteryFeeMul(s,p)*playerShare(s)/p.duration,0),payroll=totalPayroll(s),tax=round(gross*.08,1),over=load>1?round((load-1)*12,1):0,expense=round(payroll+3+tax+over,1),net=round(gross-expense,1);add(s,"cash",net);s.track.income+=gross;s.track.expense+=expense;s.trends.filter(t=>t.status==="open").forEach(t=>resolveIgnoredTrend(s,t));if(load>.75){const hp=Math.max(1,(load-.65)*8),mp=Math.max(1,(load-.55)*7);add(s,"health",-hp);add(s,"mental",-mp);risk(s,"health",load>1?8:3);risk(s,"mental",load>1?7:2);risk(s,"team",load>1?6:1)}else if(load<.3){add(s,"health",3);add(s,"mental",2);const dec=s.fame>=80?4:s.fame>=60?2:1;add(s,"fame",-dec);if(dec>=2)gameLog(s,"bad",`空窗期：没有新曝光，热度回落${dec}点。位置越高，观众忘得越快。`)}if(standbyTeam(s).length){risk(s,"team",standbyTeam(s).length*3);s.team.filter(x=>!x.role).forEach(x=>x.fav=clamp(x.fav-2))}if(s.cash<0){risk(s,"contract",8);risk(s,"tax",5);add(s,"mental",-4)}if(s.flags.taxPlan&&s.flags.taxPlan>=s.month)risk(s,"tax",3);let incident=null;const ongoing=s.activeProjects.filter(p=>p.endMonth>s.month&&!p.incidentDone&&!(p.type==="variety"&&hasMastery(s,"variety","rescue")));if(ongoing.length&&rng()<.07){const ip=pick(ongoing);ip.incidentDone=true;incident={id:ip.id,title:ip.title,kind:pick(["scandal","funding","shelved"])}}const completed=active.filter(p=>p.endMonth===s.month).map(p=>completeProject(s,p,rng));s.activeProjects=s.activeProjects.filter(p=>p.endMonth>s.month);advanceCompetitors(s,rng);s.team.forEach(m=>{if(load>1)m.loyalty=clamp(m.loyalty-2);else if(load<.65)m.loyalty=clamp(m.loyalty+1)});if(hasTalent(s,"koi")&&rng()<.08){add(s,"publicFavor",3);add(s,"fame",2);gameLog(s,"good","锦鲤体质发动：一条路人拍的偶遇视频意外出圈，热度和好感悄悄上涨。")}if(s.image.established){s.image.coherence=clamp(s.image.coherence-1);const gap=60-s.image.coherence;if(gap>0)risk(s,"image",Math.max(1,Math.round(gap/8)));else s.risks.image=clamp((s.risks.image||0)-2,0,120);if(s.image.heat>0){risk(s,"image",Math.min(6,s.image.heat));s.image.heat=Math.max(0,s.image.heat-1)}if(s.image.coherence<30&&s.image.believers>0){const lost=Math.ceil(s.image.believers*.08);s.image.believers=Math.max(0,s.image.believers-lost);add(s,"fans",-lost);add(s,"publicFavor",-2);risk(s,"fandom",3);gameLog(s,"bad","人设摇摇欲坠，一批信仰粉开始脱粉回踩。")}}s.image.believers=Math.min(s.image.believers,Math.max(0,s.fans));fandomSettle(s);v4Settle(s);cpSettle(s);foreshadowSettle(s);if(s.flags&&s.flags.phoenix){if(s.health<20){s.health=35;s.flags.phoenix=0;gameLog(s,"good","不死鸟：你在体检报告前咬着牙站了起来。");}else if(s.mental<20){s.mental=35;s.flags.phoenix=0;gameLog(s,"good","不死鸟：你没有倒下，只是安静了一个月。")}}s.track.maxFame=Math.max(s.track.maxFame,s.fame);s.track.minCondition=Math.min(s.track.minCondition,(s.health+s.mental)/2);s.last={income:round(gross,1),expense,net,load,active:active.length,payroll,tax,over};s.lastDelta={cash:s.cash-before.cash,fame:s.fame-before.fame,publicFavor:s.publicFavor-before.publicFavor,commercial:s.commercial-before.commercial,fans:s.fans-before.fans,condition:(s.health+s.mental)/2-before.condition,image:s.image.coherence-before.coherence};return{...s.last,completed,incident}}
+function chooseEvent(){const rows=EVENTS.filter(e=>(!e.cond||e.cond())&&!S.usedEvents.includes(e.id)&&e.id!==S.lastEvent);if(!rows.length)return null;const e=weightedEvent(S,rows);S.lastEvent=e.id;if(e.once)S.usedEvents.push(e.id);markEventSeen(e.id);return e}
 function riskWarning(){const rows=Object.keys(S.risks).filter(k=>S.risks[k]>=64&&(S.warningMonth[k]||0)<S.month-1);if(!rows.length)return null;rows.sort((a,b)=>S.risks[b]-S.risks[a]);return Math.random()<.76?rows[0]:pick(rows)}
-function disasterCheck(){const candidates=Object.keys(S.risks).filter(k=>S.risks[k]>=94&&S.warnings[k]>=2);if(!candidates.length)return null;const k=candidates.sort((a,b)=>S.risks[b]-S.risks[a])[0];if(S.risks[k]<108&&Math.random()>.48)return null;const endings={contract:["全面雪藏","公司和平台交叉核对合同后，同时启动了违约追责。待播项目暂停，工作室账户被保全，你的名字从新项目名单中消失。"],tax:["税务风暴","调查通报公布的那天，所有品牌同时下架了你的物料。补税和罚款只是第一步，你的职业信用已经破产。"],health:["片场倒下","连轴转的第十七天，你在镜头前失去意识。医生要求至少停工一年，所有合同进入重新谈判。"],mental:["退出镜头","你没有出现在当天的直播里。工作室发布公告，称你将无限期暂停演艺工作。这是你第一次主动把自己从热搜上拿下来。"],privacy:["私生活彻底曝光","聊天记录、行程和私人视频被打包发布。真实、剪辑和伪造内容混在一起，公众已经没有耐心分辨。"],team:["团队集体出走","经纪人、宣传和助理先后辞职，随后一份记录工作室混乱管理的长文登上热搜。所有项目失去对接人。"],fandom:["粉圈失控","一场线下冲突造成人员受伤。舆论将长期纵容、集资和攻击他人的责任全部追溯到你和工作室。"],image:["人设崩塌","你精心维持了三年的样子，在一次次自我背离后再也拼不回来。粉丝翻出你说过的每句话逐条对照，曾经信以为真的人设，成了此刻最锋利的嘲讽。"]};return endings[k]}
+function disasterCheck(){const candidates=Object.keys(S.risks).filter(k=>S.risks[k]>=94&&S.warnings[k]>=2);if(!candidates.length)return null;const k=candidates.sort((a,b)=>S.risks[b]-S.risks[a])[0];if(S.risks[k]<108&&Math.random()>foreshadowDisasterCut(S,k))return null;const endings={contract:["全面雪藏","公司和平台交叉核对合同后，同时启动了违约追责。待播项目暂停，工作室账户被保全，你的名字从新项目名单中消失。"],tax:["税务风暴","调查通报公布的那天，所有品牌同时下架了你的物料。补税和罚款只是第一步，你的职业信用已经破产。"],health:["片场倒下","连轴转的第十七天，你在镜头前失去意识。医生要求至少停工一年，所有合同进入重新谈判。"],mental:["退出镜头","你没有出现在当天的直播里。工作室发布公告，称你将无限期暂停演艺工作。这是你第一次主动把自己从热搜上拿下来。"],privacy:["私生活彻底曝光","聊天记录、行程和私人视频被打包发布。真实、剪辑和伪造内容混在一起，公众已经没有耐心分辨。"],team:["团队集体出走","经纪人、宣传和助理先后辞职，随后一份记录工作室混乱管理的长文登上热搜。所有项目失去对接人。"],fandom:["粉圈失控","一场线下冲突造成人员受伤。舆论将长期纵容、集资和攻击他人的责任全部追溯到你和工作室。"],image:["人设崩塌","你精心维持了三年的样子，在一次次自我背离后再也拼不回来。粉丝翻出你说过的每句话逐条对照，曾经信以为真的人设，成了此刻最锋利的嘲讽。"]};return endings[k]}
 function showReport(r){$("#modalTitle").textContent=`第${S.month}月 · 收入与状态`;const body=$("#modalBody");body.innerHTML="";[["项目到手收入",`+${r.income}万`],["团队工资",`-${r.payroll}万`],["个人税费",`-${r.tax}万`],["生活与基础支出","-3万"],...(r.over?[["超负荷临时成本",`-${r.over}万`]]:[])].forEach(([k,v])=>{const d=document.createElement("div");d.className="report-line";d.innerHTML=`<span>${k}</span><span class="${v[0]==="+"?"up":"down"}">${v}</span>`;body.appendChild(d)});const sum=document.createElement("div");sum.className="report-line";sum.innerHTML=`<span><b>档期负荷 ${Math.round(r.load*100)}% · 完成项目 ${r.completed.length}</b></span><span class="${r.net>=0?"up":"down"}">${r.net>=0?"+":""}${r.net}万</span>`;body.appendChild(sum);const box=$("#modalOptions");box.innerHTML='<button>下一步</button>';box.firstChild.onclick=()=>{$("#mask").classList.remove("show");flushQueue()};$("#mask").classList.add("show")}
 function showCompletion(c){const opts=[{text:"看观众反应"}];if(c.cpOffer)opts.unshift(eventOption("顺水推舟营业CP","知名度+7、粉丝+8、商业+4；隐私与粉圈风险上升"+(S.romanceId?"（你有恋情在身，风险更高）":""),()=>{add(S,"fame",7);add(S,"fans",8);add(S,"commercial",4);risk(S,"privacy",S.romanceId?14:8);risk(S,"fandom",6);gameLog(S,"good",`${c.title}的CP营业安排上了：剪辑、直拍、互动样样齐全，糖发得又多又准。`)}),eventOption("礼貌撇清","路人缘+2，CP粉-3",()=>{add(S,"publicFavor",2);add(S,"fans",-3);gameLog(S,"",`${c.title}播出后你与对家保持距离，CP粉意难平。`)}));showModal(`${PROJECT_TYPES[c.type].name}完成 · ${c.tier}`,`${c.title}
 
 内部成片评估：${c.quality}分。${c.topBilling?"（一番待遇：作品收益放大）":""}${c.cpOffer?`\n\n播出后你和对手戏演员的互动被疯狂二创，站方问要不要顺势营业CP。`:""}`,opts)}
-function annualReview(){const year=Math.ceil(S.month/12),eligible=S.track.nominations-S.track.awards,noms=[...S.competitors].sort((a,b)=>b.score-a.score).slice(0,3).map(c=>c.name);if(eligible<=0){const rival=pick(S.competitors);showModal(`第${year}年 · 颁奖礼`,`本年度主要奖项提名公布：${noms.join("、")}。
+function annualReview(){const year=Math.ceil(S.month/12),TR=awardTrack(S),eligible=TR.eligible(S)?1:0,noms=[...S.competitors].sort((a,b)=>b.score-a.score).slice(0,3).map(c=>c.name);if(eligible<=0){const rival=pick(S.competitors);showModal(`第${year}年 · ${TR.name}`,`本年度${TR.noms}提名公布：${noms.join("、")}。
 
 你没有进入候选名单，只以嘉宾身份出席。台下的位置离舞台不算远，也不算近。`,[{text:"记住这种感觉",fn:()=>{add(S,"mental",-2)}}]);return}
-const winP=clamp(.25+(S.track.bestQuality-70)/70+S.publicFavor/300,.2,.82),win=S.track.bestQuality>=76&&Math.random()<winP;
-showModal(`第${year}年 · 颁奖礼`,`本年度主要奖项提名：你、${noms.join("、")}。
+const winP=TR.winP(S),win=(!TR.gate||TR.gate(S))&&Math.random()<winP;
+showModal(`第${year}年 · ${TR.name}`,`本年度${TR.noms}提名：你、${noms.join("、")}。
 
 红毯、采访、入座。颁奖嘉宾拆开信封，全场安静下来。`,[{text:"揭晓结果",fn:()=>{
-if(win){S.track.awards++;add(S,"fame",9);add(S,"publicFavor",7);add(S,"commercial",7);gameLog(S,"good",`第${year}年颁奖礼：你捧起职业生涯第${S.track.awards}个主要奖项。`);showModal("获奖","嘉宾念出了你的名字。你走上台的这段路，热搜替你记录了每一帧。\n\n知名度+9 路人缘+7 商业价值+7",[{text:"握紧奖杯"}])}
+if(win){S.track.awards++;Object.entries(TR.gain).forEach(([k,v])=>add(S,k,v));gameLog(S,"good",`第${year}年${TR.name}：你捧起职业生涯第${S.track.awards}个主要奖项。`);tickerPush(`#${esc(S.playerName)}获${esc(TR.name)}#`,"gold");showModal("获奖",`${TR.win}\n\n${Object.entries(TR.gain).map(([k,v])=>`${({fame:"知名度",publicFavor:"路人缘",commercial:"商业价值",fans:"粉丝"})[k]}+${v}`).join(" ")}`,[{text:"握紧奖杯"}])}
 else{const w=pick(noms);add(S,"fame",3);add(S,"fans",3);S.persona.actor+=2;gameLog(S,"bad",`第${year}年颁奖礼：奖杯给了${w}，镜头切到你鼓掌的画面。`);showModal("陪跑",`奖杯给了${w}。镜头切到你，你笑着鼓掌，粉丝在超话里已经炸了。\n\n知名度+3 粉丝+3（心疼票）`,[{text:"明年再来"}])}}}])}
-function nextMonth(){S.month++;S.energy=4;S.projects=generateProjects(S);S.candidates=makeTeamCandidates(S);S.trends=generateTrends(S);gameLog(S,"month",`—— 第${S.month}月 · 新项目和新热搜已刷新 ——`);S.trends.slice(0,2).forEach(t=>tickerPush("#"+esc(t.title)+"#",t.kind==="bad"?"red":""));toast(`第${S.month}月 · 行动力已恢复`);flushQueue()}
+function nextMonth(){S.month++;S.energy=4;S.projects=refreshProjects(S);S.candidates=makeTeamCandidates(S);S.trends=generateTrends(S);gameLog(S,"month",`—— 第${S.month}月 · 新项目和新热搜已刷新 ——`);S.trends.slice(0,2).forEach(t=>tickerPush("#"+esc(t.title)+"#",t.kind==="bad"?"red":""));toast(`第${S.month}月 · 行动力已恢复`);flushQueue()}
 function endingFor(s){const rank=myRank(s),rival=s.npcs.find(n=>n.id==="rival_main"),main=s.competitors.find(c=>c.main),clean=s.track.gray===0,condition=(s.health+s.mental)/2;if(s.image.established&&s.image.coherence>=80&&s.image.believers>=25&&rank<=2)return["人设封神","三十六个月，你没有被任何一次热搜改写。你立的人设最终长成了你本人——观众记住的不是某个角色或某条通稿，而是一个始终如一的名字。",true];if(s.image.pivoted&&s.image.coherence>=68&&rank<=3)return["转型成功","你亲手拆掉了当年立起来的样子，又在废墟上重建了一个更硬的自己。转型的代价很大，但现在没人再用旧标签定义你。",true];if(s.track.awards>=2&&s.persona.actor>=18)return[s.gender==="female"?"影后":"影帝","你的名字第二次出现在重要奖杯上。有人还在讨论热度，但行业已经开始用角色和作品定义你。",true];if(s.track.awards>=1&&s.persona.music>=20)return[s.gender==="female"?"金曲歌后":"金曲歌王","从第一段被质疑的现场直拍，到整片会场合唱你的歌，你终于拥有了不依附人设的作品。",true];const __x=extEnding(s);if(__x)return __x;if(rank===1&&s.fame>=85&&s.fans>=70)return["顶流中心","三十六个月里，你的名字从新人官宣爬到每一个重要榜单的最上方。现在的问题不再是谁会看见你，而是你要让他们看见什么。",true];if(s.independent&&s.cash>90&&rank<=3)return["独立工作室","你付完违约金、补齐人员，也熟悉了每一笔成本。第三十六个月，工作室的门牌终于不再是一句口号。",true];if(rival.fav>=82&&Math.abs(playerScore(s)-main.score)<10)return["双星并耀","你和当年一起签约的那个人，终究没有将对方挤出这条路。你们争过角色、番位和奖项，最后也成了彼此最可靠的参照物。",true];if(s.track.variety>=7&&s.persona.variety>=24)return["综艺常青树","当同期艺人还在等新剧定档时，你已经成了每年都有节目等着的名字。观众或许不知道你下一个角色，但知道有你的节目不会冷场。",true];if(s.track.endorsement>=7&&s.commercial>=82&&s.cash>120)return["商业宠儿","从国民饮料到奢侈品，品牌把你的名字写进了年度计划。作品仍有争议，但市场已经给出了最直接的报价。",true];if(clean&&s.publicFavor>=78&&condition>=65)return["干净的名字","你没有把所有机会都换成热度，也没有让每一次沉默都变成默认。三年后，你的公众信用比任何一次热搜都更值钱。",true];if(rank===6&&main.score>playerScore(s)+18)return["宿敌的胜利",`三十六个月前，你和${rival.name}坐在同一张桌前签约。现在对方站在了你曾经想去的位置。你没有退圈，但下一份合同已经不再由你开价。`,false];if(s.fame<35||s.cash<0)return["过气与转型","热搜慢慢不再出现你的名字。这未必是结束：你开始学着把主持、教学、制作和小角色当作工作，而不是失败。",false];return[rank<=3?"稳定一线":"圈内有名",rank<=3?"你没有成为神话，也没有被一次风波带走。三年后，项目方会认真讨论你的档期和报价，这已经是很多人没有到达的位置。":"三年过去，你仍然有工作、有粉丝，也有几个能被记住的镜头。星途没有实现当年所有的想象，但还没有关门。",rank<=3]}
-function showEnd(title,story,good){S.over=true;S.endData={title,story,good};save();try{hallPush(S,title,good)}catch(e){}if(good){starfall(40)}else{shake(2)}modalQueue=[];$("#mask").classList.remove("show");const badges=[];if(S.track.awards)badges.push("奖项认可");if(S.track.bestQuality>=85)badges.push("代表作");if(S.fame>=85)badges.push("全民知名");if(S.publicFavor>=75)badges.push("国民好感");if(S.track.gray===0)badges.push("账目干净");if(S.independent)badges.push("独立艺人");if(S.romanceId)badges.push(S.romancePublic?"公开爱人":"秘密关系");if(myRank(S)===1)badges.push("榜首");if(!badges.length)badges.push("撑完三年");const grid=[["三年净现金",`${Math.round(S.cash-(BACKGROUNDS[S.background].cash+COMPANIES[S.company].advance))}万`],["完成项目",`${S.track.projects}个`],["最佳作品",`${S.track.bestQuality}分`],["主要奖项",`${S.track.awards}个`],["最终排名",`第${myRank(S)}名`],["团队规模",`${S.team.length}人`]];const ach=checkAchievements(S,title,good),unlocked=Object.keys(ach.meta.ach).length;const talentChips=(S.talents||[]).map(id=>`<span class="badge gold-b">☆ ${TALENTS[id].name}</span>`).join("");const highlights=S.log.filter(l=>l.cls==="good"||l.cls==="bad").slice(0,3).reverse();$("#endCard").innerHTML=`<div class="eyebrow">《模拟明星》36个月结算 · ${esc(S.playerName)}</div><h2>${good?"▣":"□"} ${title}</h2><div class="story">${story}</div>${talentChips?`<div class="badges">${talentChips}</div>`:""}<div class="metric-grid">${grid.map(([k,v])=>`<div class="metric"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("")}</div><div class="badges">${badges.map(x=>`<span class="badge">${x}</span>`).join("")}</div>${highlights.length?`<div class="hl-title">生涯高光时刻</div><div class="hl-list">${highlights.map(l=>`<div class="hl ${l.cls}">${esc(l.text)}</div>`).join("")}</div>`:""}<div class="hl-title">生涯里程碑</div><div class="badges">${(S.feats||[]).length?(S.feats||[]).map(x=>`<span class="badge gold-b">✦ ${esc(x)}</span>`).join(""):`<span class="badge">这一局没有留下特别的印记</span>`}</div><div class="hl-title">宿敌战绩</div><div class="badges"><span class="badge">${S.duel.wins}胜 ${S.duel.losses}负</span><span class="badge">难度 ${DIFF(S).label}</span><span class="badge">甩掉跟拍 ${S.paparazzi.escaped} 次</span></div><div class="hl-title">生涯名人堂</div>${renderHall()}<div class="hl-title">成就收集 ${unlocked}/${ACHIEVEMENTS.length}${ach.fresh.length?` · 本局新解锁${ach.fresh.length}个`:""}</div><div class="ach-grid">${ACHIEVEMENTS.map(a=>`<div class="ach ${ach.meta.ach[a.id]?"on":""}"><b>${ach.fresh.includes(a.id)?"NEW · ":""}${a.name}</b><small>${a.desc}</small></div>`).join("")}</div><button class="primary" style="width:100%;margin-top:10px" onclick="restartGame()">重新签一份合约</button>`;$("#ending").classList.add("show")}
+function showEnd(title,story,good){S.over=true;S.endData={title,story,good};save();try{hallPush(S,title,good)}catch(e){}if(good){starfall(40)}else{shake(2)}modalQueue=[];$("#mask").classList.remove("show");const badges=[];if(S.track.awards)badges.push("奖项认可");if(S.track.bestQuality>=85)badges.push("代表作");if(S.fame>=85)badges.push("全民知名");if(S.publicFavor>=75)badges.push("国民好感");if(S.track.gray===0)badges.push("账目干净");if(S.independent)badges.push("独立艺人");if(S.romanceId)badges.push(S.romancePublic?"公开爱人":"秘密关系");if(myRank(S)===1)badges.push("榜首");if(!badges.length)badges.push("撑完三年");const grid=[["三年净现金",`${Math.round(S.cash-(BACKGROUNDS[S.background].cash+COMPANIES[S.company].advance))}万`],["完成项目",`${S.track.projects}个`],["最佳作品",`${S.track.bestQuality}分`],["主要奖项",`${S.track.awards}个`],["最终排名",`第${myRank(S)}名`],["团队规模",`${S.team.length}人`]];const ach=checkAchievements(S,title,good),unlocked=Object.keys(ach.meta.ach).length;const talentChips=(S.talents||[]).map(id=>`<span class="badge gold-b">☆ ${TALENTS[id].name}</span>`).join("");const highlights=S.log.filter(l=>l.cls==="good"||l.cls==="bad").slice(0,3).reverse();$("#endCard").innerHTML=`<div class="eyebrow">《模拟明星》36个月结算 · ${esc(S.playerName)}</div><h2>${good?"▣":"□"} ${title}</h2><div class="story">${story}</div>${talentChips?`<div class="badges">${talentChips}</div>`:""}<div class="metric-grid">${grid.map(([k,v])=>`<div class="metric"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("")}</div><div class="badges">${badges.map(x=>`<span class="badge">${x}</span>`).join("")}</div>${highlights.length?`<div class="hl-title">生涯高光时刻</div><div class="hl-list">${highlights.map(l=>`<div class="hl ${l.cls}">${esc(l.text)}</div>`).join("")}</div>`:""}<div class="hl-title">生涯里程碑</div><div class="badges">${(S.feats||[]).length?(S.feats||[]).map(x=>`<span class="badge gold-b">✦ ${esc(x)}</span>`).join(""):`<span class="badge">这一局没有留下特别的印记</span>`}</div><div class="hl-title">宿敌战绩</div><div class="badges"><span class="badge">${S.duel.wins}胜 ${S.duel.losses}负</span><span class="badge">难度 ${DIFF(S).label}</span><span class="badge">甩掉跟拍 ${S.paparazzi.escaped} 次</span></div><div class="hl-title">留给下一段星途</div><div class="copy">三选一。这一局带不走的东西，可以换一件留给下一个人。</div><div class="relic-grid" id="relicBox"></div><div class="hl-title">生涯名人堂</div>${renderHall()}<div class="hl-title">成就收集 ${unlocked}/${ACHIEVEMENTS.length}${ach.fresh.length?` · 本局新解锁${ach.fresh.length}个`:""}</div><div class="ach-grid">${ACHIEVEMENTS.map(a=>`<div class="ach ${ach.meta.ach[a.id]?"on":""}"><b>${ach.fresh.includes(a.id)?"NEW · ":""}${a.name}</b><small>${a.desc}</small></div>`).join("")}</div><button class="primary" style="width:100%;margin-top:10px" onclick="restartGame()">重新签一份合约</button>`;relicOffer(S,good);$("#ending").classList.add("show")}
 function endMonth(){if(S.over)return;if(S.energy>0){showModal("本月还有行动力",`还剩${S.energy}点行动力，确定直接进入月末结算？`,[eventOption("直接结算","剩余行动力作废",()=>doEndMonth()),eventOption("回去再看看","",()=>{})]);return}doEndMonth()}
 const IMAGE_SUGGEST={academy:["purist","devoted"],talent:["sunny","devoted"],influencer:["buzzy","candid"],child:["purist","sunny"]};
 function establishImage(tag){const arch=IMAGE_ARCHETYPES[tag];if(!arch||!S.image||S.image.established)return;S.image.tag=tag;S.image.established=true;S.image.act=1;S.image.coherence=clamp(S.image.coherence+8);const nb=Math.round(S.fans*.18);S.image.believers=Math.min(S.fans,S.image.believers+nb);add(S,"publicFavor",3);S.image.history.push({m:S.month,ev:"establish",tag});gameLog(S,"good",`你立住了「${arch.name}」人设：${arch.tagline}。第一批约${nb}万信仰粉认准了你。`);if(typeof renderAll==="function")renderAll()}
 function imageArchetypeOptions(){const nat=IMAGE_SUGGEST[S.background]||["purist"];const others=Object.keys(IMAGE_ARCHETYPES).filter(k=>!nat.includes(k));const shown=[nat[0],nat[1],others[0],others[1]].filter(Boolean);return shown.map(k=>{const a=IMAGE_ARCHETYPES[k],natural=nat.includes(k);return eventOption(`立「${a.name}」`,(natural?"顺势·":"逆势·")+a.tagline,()=>establishImage(k))})}
 function arcEvent(s){if(!s.image.established&&s.month>=2)return{id:"image_act1",title:"定调 · 立人设",body:()=>`出道几个月，公司想给你定个调子。经纪人摊开路人评价和后台数据：\n\n往哪个方向立人设，接下来的资源、粉丝和风评都会跟着走。顺着底子立省力，逆着立更稀缺也更难。一旦立住就要长期维持——人设崩了，比从没立过更糟。`,opts:()=>imageArchetypeOptions()};return null}
 function imageFitOnSign(s,p){if(!s.image.established||!s.image.tag)return;const a=IMAGE_ARCHETYPES[s.image.tag],fitv=a.fit.includes(p.type)?1:a.against.includes(p.type)?-1:0;if(fitv>0){s.image.coherence=clamp(s.image.coherence+5);const nb=Math.round(s.fans*.04);s.image.believers=Math.min(s.fans,s.image.believers+nb);add(s,"publicFavor",2);gameLog(s,"good",`这条资源贴合你的「${a.name}」人设，信仰粉又多了一批。`)}else if(fitv<0){s.image.coherence=clamp(s.image.coherence-12);s.image.heat+=2;add(s,"cash",Math.round(p.fee*.15));risk(s,"privacy",4);gameLog(s,"bad",`接下与「${a.name}」相悖的资源：钱到账了，但路人开始嘀咕「变了」。`)}}
-function doEndMonth(){const report=settleCore(S),tasks=[()=>showReport(report)];report.completed.forEach(c=>tasks.push(()=>showCompletion(c)));if(report.incident)tasks.push(()=>showIncident(report.incident));const disaster=disasterCheck();if(disaster){tasks.push(()=>showEnd(disaster[0],disaster[1],false));queueAll(tasks);return}const warning=riskWarning();if(warning){const w=RISK_WARNINGS[warning];S.warningMonth[warning]=S.month;S.warnings[warning]++;tasks.push(()=>showModal(`风险征兆 · ${w.title}`,w.body,[eventOption(w.fix,`花${w.cost}万`,()=>{add(S,"cash",-w.cost);risk(S,warning,w.delta);if(warning==="health")add(S,"health",8);if(warning==="mental")add(S,"mental",9);if(warning==="image")S.image.coherence=clamp(S.image.coherence+6);gameLog(S,"good",`${RISK_NAMES[warning]}方面进行了一次专项整改。`)},S.cash<w.cost),eventOption("现在还能撑","征兆暂时不影响表面工作",()=>{risk(S,warning,w.ignore);gameLog(S,"bad",`${w.title}被暂时搁置。`)})]))}else{const e=arcEvent(S)||storyEvent(S)||chooseEvent();if(e){const body=typeof e.body==="function"?e.body():e.body;tasks.push(()=>showModal(`圈内事件 · ${e.title}`,body,e.opts()))}}const fi=fandomIncident();if(fi)tasks.push(fi);if(duelDue(S)&&Math.random()<.8)tasks.push(()=>startDuel());const bc=(Math.random()<.16)?brandCrisis():null;if(bc)tasks.push(bc);if(Math.random()< (0.1+S.risks.privacy/460+(S.romanceId?.14:0)))tasks.push(()=>paparazziChase(pick(["有人拍到了你的车停在同一个小区","私生群里流出了你今晚的行程","一个自称粉丝的账号发了你家楼下的照片"])));if(S.month%12===0)tasks.push(()=>annualReview());if(S.month>=MAX_MONTH)tasks.push(()=>{const e=endingFor(S);showEnd(e[0],e[1],e[2])});else tasks.push(()=>nextMonth());queueAll(tasks)}
+function doEndMonth(){const report=settleCore(S),tasks=[()=>showReport(report)];siteEventTasks(S).forEach(t=>tasks.push(t));report.completed.forEach(c=>tasks.push(()=>showCompletion(c)));masteryTasks(S).forEach(t=>tasks.push(t));if(report.incident)tasks.push(()=>showIncident(report.incident));const disaster=disasterCheck();if(disaster){tasks.push(()=>showEnd(disaster[0],disaster[1],false));queueAll(tasks);return}const warning=riskWarning();if(warning){const w=RISK_WARNINGS[warning];S.warningMonth[warning]=S.month;S.warnings[warning]++;tasks.push(()=>showModal(`风险征兆 · ${w.title}`,w.body,[eventOption(w.fix,`花${w.cost}万`,()=>{add(S,"cash",-w.cost);risk(S,warning,w.delta);if(warning==="health")add(S,"health",8);if(warning==="mental")add(S,"mental",9);if(warning==="image")S.image.coherence=clamp(S.image.coherence+6);gameLog(S,"good",`${RISK_NAMES[warning]}方面进行了一次专项整改。`)},S.cash<w.cost),eventOption("现在还能撑","征兆暂时不影响表面工作",()=>{risk(S,warning,w.ignore);gameLog(S,"bad",`${w.title}被暂时搁置。`)})]))}else{const fs=foreshadowTask(S);if(fs)tasks.push(fs);else{const e=arcEvent(S)||storyEvent(S)||chooseEvent();if(e){const body=typeof e.body==="function"?e.body():e.body;tasks.push(()=>showModal(`圈内事件 · ${e.title}`,body,e.opts()))}}}const fi=fandomIncident();if(fi)tasks.push(fi);if(duelDue(S)&&Math.random()<.8)tasks.push(()=>startDuel());const bc=(Math.random()<.16)?brandCrisis():null;if(bc)tasks.push(bc);if(Math.random()< (0.1+S.risks.privacy/460+(S.romanceId?.14:0))*cpPaparazziMul(S))tasks.push(()=>paparazziChase(pick(["有人拍到了你的车停在同一个小区","私生群里流出了你今晚的行程","一个自称粉丝的账号发了你家楼下的照片"])));const cpx=cpExpireTask(S);if(cpx)tasks.push(cpx);if(S.month%12===0)tasks.push(()=>annualReview());if(S.month>=MAX_MONTH)tasks.push(()=>{const e=endingFor(S);showEnd(e[0],e[1],e[2])});else tasks.push(()=>nextMonth());queueAll(tasks)}
 
 function showCareerCreator(){$("#gameGuide").classList.remove("show");$("#creator").classList.add("show")}
 function init(){renderCreatorChoices();if(load()){$("#creator").classList.remove("show");renderAll();if(S.over&&S.endData)setTimeout(()=>showEnd(S.endData.title,S.endData.story,S.endData.good),0)}else $("#gameGuide").classList.add("show");$("#endMonthBtn").onclick=endMonth;$("#resetBtn").onclick=requestRestart;document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));document.addEventListener("click",()=>document.querySelectorAll(".stat.tip-on").forEach(x=>x.classList.remove("tip-on")))}
@@ -856,7 +891,7 @@ const STORY_ARCS=[
 /* ── 糊咖翻红线 ── */
 {id:"comeback",
  when:s=>{const st=arcStage(s,"comeback");
-  if(st===0)return s.month>=10&&s.fame<38&&s.track.projects>=2;
+  if(st===0)return(s.flags&&s.flags.comebackReady)?(s.month>=3&&s.track.projects>=1):(s.month>=10&&s.fame<38&&s.track.projects>=2); /* 糊咖回锅背景直通 comeback 线 */
   return st>=1&&st<90&&((s.arcs.comeback.next||0)<=s.month)},
  make:s=>{const st=arcStage(s,"comeback");
  if(st===0)return{id:"cb_0",title:"没有人在等你的新作品",body:"这个月你的超话签到人数掉到三位数。一个做短剧的制片人加了你，开口就是：「三天一集，题材土，但数据是真的。」\n\n经纪人在旁边一言不发。",opts:()=>[
@@ -954,6 +989,7 @@ function hallPush(s,title,good){
   m.hall.unshift({name:s.playerName,title,good,score:playerScore(s),month:s.month,diff:s.difficulty||"normal",awards:s.track.awards,cash:Math.round(s.cash),date:new Date().toISOString().slice(0,10)});
   m.hall=m.hall.slice(0,12);
   m.best=Math.max(m.best||0,playerScore(s));
+  m.runs=(m.runs||0)+1; /* 跨局事件降权用的局数计数 */
   m.legacy=good?{cash:Math.min(40,Math.round(s.cash*.12)),fame:s.fame>=70?4:2,favor:8,favorIds:s.npcs.filter(n=>n.fav>=70).map(n=>n.id).slice(0,3),note:`上一位「${title}」留下的人脉和一点积蓄`}:{cash:6,fame:0,favor:4,favorIds:["fang"],note:"上一段星途留下的教训，和一个还愿意接你电话的记者"};
   saveMeta(m)}catch(e){}
 }
@@ -961,12 +997,880 @@ function renderHall(){
  if(typeof document==="undefined")return"";
  let m;try{m=loadMeta()}catch(e){return""}
  const hall=(m&&m.hall)||[];if(!hall.length)return`<div class="hall-empty">还没有完成过一段星途。第一条记录会留在这里。</div>`;
- return `<div class="hall-list">${hall.map(h=>`<div class="hall-row ${h.good?"good":"bad"}"><b>${esc(h.name)}</b><span>${esc(h.title)}</span><i>${DIFFICULTY[h.diff]?DIFFICULTY[h.diff].label:"普通"} · ${h.score}分 · ${h.awards}奖</i></div>`).join("")}</div>`;
+ return `<div class="hall-list">${hall.map(h=>`<div class="hall-row ${h.good?"good":"bad"}"><b>${esc(h.name)}</b><span>${esc(h.title)}</span><i>${DIFFICULTY[h.diff]?DIFFICULTY[h.diff].label:"普通"} · ${h.score}分 · ${h.awards}奖${h.relic?` · ✦${esc(h.relic)}`:""}</i></div>`).join("")}</div>`;
 }
 
-const API={initialState,calculateForecast,generateProjects,auditionChance,settleCore,endingFor,playerScore,myRank,getState:()=>S,setState:s=>S=s,getProjectTemplateCount:()=>PROJECT_TEMPLATES.length,getTrendTemplateCount:()=>TREND_TEMPLATES.length,getEventCount:()=>EVENTS.length,getRiskWarningCount:()=>Object.keys(RISK_WARNINGS).length,getEvents:()=>EVENTS,getArcCount:()=>STORY_ARCS.length,extEnding,storyEvent,fandomSettle,fandomPower,DIFFICULTY};
+/* ══════════════════════════════════════════════════════════════════
+   《模拟明星》v4 · 批次1
+   训练递减与技能专精（P0-3） · 艺人工作室升级（P0-2）
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ---------- 新增状态字段：initialState 与 load() 迁移共用，必须幂等 ---------- */
+function v4Init(s){
+ if(!s)return s;
+ if(!s.studio)s.studio={level:0,invested:0,lastProject:0};
+ if(typeof s.studio.level!=="number")s.studio.level=0;
+ if(typeof s.studio.invested!=="number")s.studio.invested=0;
+ if(typeof s.studio.lastProject!=="number")s.studio.lastProject=0;
+ if(!s.mastery||typeof s.mastery!=="object")s.mastery={};
+ if(!Array.isArray(s.masteryPending))s.masteryPending=[];
+ return s;
+}
+
+/* ══════════════ 九、技能专精 ══════════════ */
+
+const MASTERY_GATE=85;
+const MASTERY={
+ acting:[
+  {id:"contract",name:"片约演技",desc:"镜头前的分寸感成了名片。影视项目成片评估+4。"},
+  {id:"awardface",name:"奖项脸",desc:"评委记得住你的脸。影视与音乐类作品更容易挤进提名名单。"}
+ ],
+ singing:[
+  {id:"livegod",name:"Live之神",desc:"现场从不失手。舞台与音乐项目不会翻车。"},
+  {id:"writer",name:"创作人",desc:"你开始署名作曲。音乐项目的路人缘收益+50%。"}
+ ],
+ variety:[
+  {id:"rescue",name:"综艺救场",desc:"再乱的录制现场你都能圆回来。综艺项目不会出制作事故。"},
+  {id:"memelord",name:"国民梗王",desc:"你的梗被全网引用。每完成一档综艺，路人缘额外+3。"}
+ ],
+ fashion:[
+  {id:"redcarpet",name:"红毯常客",desc:"品牌方点名要你。代言项目片酬+20%。"},
+  {id:"seller",name:"带货体质",desc:"你报什么价，货就走什么量。直播项目片酬+30%。"}
+ ],
+ social:[
+  {id:"insider",name:"局中人",desc:"你知道该给谁打电话。人物互动的好感收益+30%。"},
+  {id:"clean",name:"零绯闻手腕",desc:"你很清楚哪些场合不能出现。私生活风险每月额外衰减1点。"}
+ ]
+};
+function hasMastery(s,skill,id){return !!(s&&s.mastery&&s.mastery[skill]===id)}
+
+/* 技能增长统一入口：越过85阈值时登记待选专精，由 UI 侧择机弹出 */
+function gainSkill(s,key,v){
+ if(!s||!s.skills||!(key in s.skills))return 0;
+ const before=s.skills[key];s.skills[key]=clamp(before+v);
+ v4Init(s);
+ if(before<MASTERY_GATE&&s.skills[key]>=MASTERY_GATE&&!s.mastery[key]&&!s.masteryPending.includes(key))s.masteryPending.push(key);
+ return round(s.skills[key]-before,1);
+}
+/* 训练收益：<60 +5 ／ 60-79 +3 ／ ≥80 +2；专业老师在岗各档+1（顶级老师+2）；Lv1 工作室+2 */
+function trainGain(s,key){
+ const v=s.skills[key],base=v<60?5:v<80?3:2;
+ const coach=teamMember(s,"coach")?(teamPower(s,"coach")>=1?2:1):0;
+ const room=(s.studio&&s.studio.level>=1)?2:0;
+ return{base,coach,room,total:base+coach+room};
+}
+function trainCost(s){return(s.studio&&s.studio.level>=1)?{h:-1,m:-1}:{h:-1,m:-2}} /* Lv1 练习室：身心消耗减半 */
+function masteryTip(s,key){
+ const g=trainGain(s,key),extra=[];
+ if(g.coach)extra.push(`老师+${g.coach}`);
+ if(g.room)extra.push(`练习室+${g.room}`);
+ return`${SKILLS[key]}+${g.total}${extra.length?`（${extra.join("、")}）`:""}，身心小幅下降`;
+}
+function chooseMastery(skill,id){
+ v4Init(S);S.mastery[skill]=id;S.masteryPending=S.masteryPending.filter(k=>k!==skill);
+ const m=MASTERY[skill].find(x=>x.id===id);
+ gameLog(S,"good",`${SKILLS[skill]}达到专精：${m.name}。`);
+ splash("专 精",`${SKILLS[skill]} · ${m.name}`,"good");starfall(18);
+ feat(S,`${SKILLS[skill]}专精`);
+ tickerPush(`#${esc(S.playerName)}的${esc(SKILLS[skill])}被同行拿来当范本#`,"gold");
+ save();
+}
+function masteryModal(skill){
+ const rows=MASTERY[skill];
+ showModal(`专精 · ${SKILLS[skill]}`,`你的${SKILLS[skill]}已经越过了行业里那条看不见的线。往下走有两条路，选定之后这一局不再更改。`,
+  rows.map(m=>eventOption(m.name,m.desc,()=>chooseMastery(skill,m.id))));
+}
+/* 月末结算后统一处理待选专精（项目完成也会推高技能） */
+function masteryTasks(s){v4Init(s);return s.masteryPending.slice().map(k=>()=>masteryModal(k))}
+function flushMastery(){v4Init(S);if(S.masteryPending.length)queueAll(S.masteryPending.slice().map(k=>()=>masteryModal(k)))}
+
+/* ---------- 专精的数值挂接 ---------- */
+function masteryQuality(s,p){return(["film","drama"].includes(p.type)&&hasMastery(s,"acting","contract"))?4:0}
+function masteryFloor(s,p){return(["stage","music"].includes(p.type)&&hasMastery(s,"singing","livegod"))?46:10} /* 46 恰好脱离「翻车」区间，保留「反响平平」的可能 */
+function masteryNomLine(s){return hasMastery(s,"acting","awardface")?79:82} /* 提名阈值 82→79；实测提名率约+13~15个百分点，对应设计的「提名概率+15%」 */
+function masteryFeeMul(s,p){
+ let m=1;
+ if(p.type==="endorsement"&&hasMastery(s,"fashion","redcarpet"))m*=1.2;
+ if(p.type==="live"&&hasMastery(s,"fashion","seller"))m*=1.3;
+ return m;
+}
+function masteryRepMul(s,p){return(p.type==="music"&&hasMastery(s,"singing","writer"))?1.5:1}
+function masteryOnComplete(s,p){if(p.type==="variety"&&hasMastery(s,"variety","memelord"))add(s,"publicFavor",3)}
+
+/* ══════════════ 十、艺人工作室 ══════════════ */
+
+const STUDIO_LEVELS=[
+ {lv:1,name:"私人练习室",cost:40,desc:"一间随时能用的排练房和一台像样的监视器。训练效果+2，训练的身心消耗减半。"},
+ {lv:2,name:"内容制作组",cost:90,desc:"三个人的小组，负责你的物料、短视频和账号。每月路人缘+1、粉丝+1，主动营业效果+40%。"},
+ {lv:3,name:"艺人厂牌",cost:180,desc:"你有了自己的出品方。每6个月可以自费发起一个音乐或剧集项目，分成全归你，盈亏也全归你。"}
+];
+const STUDIO_PROJECT_COST=60,STUDIO_PROJECT_CD=6;
+function studioNext(s){return STUDIO_LEVELS[(s.studio&&s.studio.level)||0]||null}
+function studioCost(s,lv){const base=STUDIO_LEVELS[lv-1].cost;return Math.round(s.independent?base*.8:base)} /* 独立工作室自负盈亏，升级费8折 */
+function studioName(s){const lv=(s.studio&&s.studio.level)||0;return lv?STUDIO_LEVELS[lv-1].name:"尚未起步"}
+function studioUpgrade(){
+ v4Init(S);const next=studioNext(S);if(!next)return;
+ const cost=studioCost(S,next.lv);
+ if(S.cash<cost){toast("现金不足","bad");return}
+ add(S,"cash",-cost);S.studio.level=next.lv;S.studio.invested+=cost;
+ gameLog(S,"good",`工作室升级至Lv${next.lv}·${next.name}，投入${cost}万。`);
+ toast(`工作室升至 ${next.name}`,"good");
+ if(next.lv===3){splash("艺人厂牌","你现在是出品方","good");starfall(22);feat(S,"建成个人厂牌");tickerPush(`#${esc(S.playerName)}成立个人厂牌#`,"gold")}
+ save();renderAll();
+}
+function studioReady(s){return(s.studio&&s.studio.level>=3)&&(s.month-(s.studio.lastProject||0)>=STUDIO_PROJECT_CD||!s.studio.lastProject)}
+function studioLaunchMenu(){
+ v4Init(S);
+ if(!studioReady(S)){toast("厂牌还在消化上一个项目","warn");return}
+ if(S.cash<STUDIO_PROJECT_COST){toast("现金不足","bad");return}
+ showModal("自制项目","厂牌自己出钱、自己承担。片酬这一栏没有数字，回报只看成片。",
+  [eventOption("做一张专辑",`花${STUDIO_PROJECT_COST}万，2个月，考验唱功`,()=>studioLaunch("music"),S.cash<STUDIO_PROJECT_COST),
+   eventOption("做一部剧集",`花${STUDIO_PROJECT_COST}万，2个月，考验表演`,()=>studioLaunch("drama"),S.cash<STUDIO_PROJECT_COST),
+   eventOption("再等等","不花钱",()=>{})]);
+}
+function studioLaunch(type){
+ v4Init(S);
+ if(S.cash<STUDIO_PROJECT_COST||!studioReady(S))return;
+ const pool=PROJECT_TEMPLATES.filter(t=>t.type===type),t=pick(pool);
+ const p=makeProject(t,"selfmade",S,90);
+ p.duration=2;p.endMonth=S.month+1;p.startMonth=S.month;p.status="accepted";
+ p.fee=0;p.invest=STUDIO_PROJECT_COST;p.direct=true;
+ p.difficulty=Math.round(p.difficulty*.9); /* 自己的项目没有试镜，难度略降 */
+ p.prep=(p.prep||0)+4; /* 厂牌制作加成 */
+ p.desc="厂牌自制。没有片酬，成片好坏直接换成你的现金。";
+ add(S,"cash",-STUDIO_PROJECT_COST);
+ S.studio.lastProject=S.month;
+ S.activeProjects.push(p);
+ gameLog(S,"good",`厂牌启动自制项目：${p.title}，自投${STUDIO_PROJECT_COST}万。`);
+ toast("自制项目已启动","good");tickerPush(`#${esc(S.playerName)}的厂牌开机#`,"gold");
+ imageFitOnSign(S,p);
+ save();renderAll();
+}
+/* 自制项目结算：质量换现金，三档 */
+function studioPayout(s,p,quality){
+ const invest=p.invest||STUDIO_PROJECT_COST;
+ const ret=quality>=80?2.2:quality>=60?1:.35;
+ const back=Math.round(invest*ret*DIFF(s).cashMul); /* 属片酬类收益，吃难度系数 */
+ add(s,"cash",back);
+ s.track.income+=back;
+ gameLog(s,back>=invest?"good":"bad",`自制项目《${p.title}》回款${back}万（投入${invest}万）。`);
+}
+/* 月度被动：Lv2 内容组产出、零绯闻手腕的风险衰减 */
+function v4Settle(s){
+ v4Init(s);
+ if(s.studio.level>=2){add(s,"publicFavor",1);add(s,"fans",1)}
+ if(hasMastery(s,"social","clean"))risk(s,"privacy",-1);
+}
+function studioActBonus(s){return(s.studio&&s.studio.level>=2)?1.4:1} /* Lv2：主动营业效果+40% */
+function renderStudioCard(){
+ v4Init(S);
+ const lv=S.studio.level,next=studioNext(S),cost=next?studioCost(S,next.lv):0;
+ const owned=STUDIO_LEVELS.slice(0,lv).map(x=>`<span class="attr">Lv${x.lv} ${x.name}</span>`).join("");
+ const cdLeft=lv>=3?Math.max(0,STUDIO_PROJECT_CD-(S.month-(S.studio.lastProject||0))):0;
+ const ready=lv>=3&&studioReady(S);
+ return`<div class="card studio-card"><div class="row"><div><h3>个人工作室</h3> <span class="pill ${lv?"gold":""}">${lv?`Lv${lv} · ${studioName(S)}`:"未建立"}</span></div><div class="number">累计投入 <b>${S.studio.invested}万</b></div></div>
+ <div class="studio-track">${STUDIO_LEVELS.map(x=>`<i class="${lv>=x.lv?"on":""}"></i>`).join("")}</div>
+ ${owned?`<div class="attrs">${owned}</div>`:""}
+ <div class="copy">${next?`下一级 Lv${next.lv}·${next.name}：${next.desc}`:"三级已经全部建成。往下要靠作品说话。"}</div>
+ <div class="card-actions">${next?`<button class="small" onclick="studioUpgrade()" ${S.cash<cost?"disabled":""}>升级至${next.name} · ${cost}万${S.independent?"（独立8折）":""}</button>`:""}
+ ${lv>=3?`<button class="small" onclick="studioLaunchMenu()" ${ready&&S.cash>=STUDIO_PROJECT_COST?"":"disabled"}>发起自制项目 · ${STUDIO_PROJECT_COST}万${ready?"":`（还需${cdLeft}个月）`}</button>`:""}</div></div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   《模拟明星》v4 · 批次2
+   片场事件／项目里程碑（P0-1） · 窗口期与档期竞争（P1-1）
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ---------- 新增状态字段：initialState 与 load() 迁移共用，必须幂等 ---------- */
+function v5Init(s){
+ if(!s)return s;
+ if(!Array.isArray(s.siteSeen))s.siteSeen=[];
+ if(typeof s.siteCount!=="number")s.siteCount=0;
+ (s.activeProjects||[]).forEach(p=>{if(typeof p.progress!=="number")p.progress=0});
+ (s.projects||[]).forEach(p=>{if(typeof p.hold!=="number")p.hold=0;tagProject(s,p)});
+ return s;
+}
+
+/* ══════════════ 十一、片场事件（项目里程碑） ══════════════ */
+
+/* 触发条件：档期≥2月、且本月不是结算月（结算月的成片已经定了，再改进度没有意义）。
+   设计文档写「非首末月的每个进行月，55%」，但档期2月的项目按此永远触发不到，
+   一局只剩3月档期能出事件——实测均值 2.4-4.1 次，低于验收要求的 6-10 次；
+   若把首月也按 55% 算，则升到 10.5-14.7 次，又高于验收区间。
+   故按「进行月」分两档：设计的 55% 保留给中段月，开机当月降到 28%
+   （剧组还在磨合，出状况的概率本来就低）。实测一局 6.6-9.1 次，落在验收区间。 */
+const SITE_CHANCE=.55,SITE_CHANCE_OPEN=.28,SITE_MIN=-2,SITE_MAX=3;
+
+/* 进度是隐藏值：文案只给定性词，不给数字 */
+function siteProgress(s,p,v,note){
+ p.progress=clamp((p.progress||0)+v,SITE_MIN,SITE_MAX);
+ if(note)gameLog(s,v>0?"good":v<0?"bad":"",`${p.title}：${note}`);
+ if(v>0)toast("拍摄进度顺利","good");else if(v<0)toast("这段留下了隐患","bad");
+}
+/* 技能判定：复用既有的「属性 + 随机量 ≥ 阈值」写法 */
+function siteCheck(s,skill,line){return s.skills[skill]+rand(0,30)>=line}
+
+const SITE_EVENTS={
+ drama:[
+  {id:"d1",title:"导演要求加拍夜戏",body:"原定三天的戏，导演看完样片说要重拍。经纪人在群里问你：是按合同办，还是陪剧组熬完。",
+   opts:(s,p)=>[
+    eventOption("留在片场陪拍完","健康-6，进度顺利，导演好感+4",()=>{add(s,"health",-6);relation(s,"gu",4);siteProgress(s,p,2,"你把那场夜戏拍到了导演满意为止。")}),
+    eventOption("请替身和特调进组","花12万，进度小幅推进",()=>{add(s,"cash",-12);siteProgress(s,p,1,"多花的钱换来了一个能交差的版本。")},s.cash<12),
+    eventOption("按合同时间收工","进度略有损失，剧组风评下滑",()=>{risk(s,"team",3);siteProgress(s,p,-1,"你按点走了，那场戏最后用的是替身的背影。")})]},
+  {id:"d2",title:"剧本临时改写",body:"编剧半夜发来新版本，你的角色动机整个换了方向。明早九点开机。",
+   opts:(s,p)=>[
+    eventOption("通宵重新捋一遍","心理-5，进度顺利",()=>{add(s,"mental",-5);siteProgress(s,p,2,"你带着新版本进的组，导演当场把镜头加长了。")}),
+    eventOption("找编剧朋友帮忙拆","花8万，进度小幅推进",()=>{add(s,"cash",-8);siteProgress(s,p,1,"有人替你把逻辑理顺了，至少不会演拧。")},s.cash<8),
+    eventOption("照原来的理解演","没有代价，也没有进展",()=>{siteProgress(s,p,0,"你演的是上一版的人物，剪出来会有点飘。")})]},
+  {id:"d3",title:"对手戏演员迟到了三天",body:"制片人一直在打圆场。你的戏份被打散成十几个空档，剧组的气压很低。",
+   opts:(s,p)=>[
+    eventOption("私下把话说开","考验社交，成则进度顺利",()=>{if(siteCheck(s,"social",78)){relation(s,"zhou",3);siteProgress(s,p,2,"一顿饭之后，对方第二天准时到了。")}else{risk(s,"team",4);siteProgress(s,p,-1,"话没说到点上，气氛比之前更僵。")}}),
+    eventOption("让制片方去协调","花6万走人情，进度小幅推进",()=>{add(s,"cash",-6);siteProgress(s,p,1,"制片方出面压了一次，档期勉强接上。")},s.cash<6),
+    eventOption("自己先把单人镜头拍完","健康-4，不影响进度",()=>{add(s,"health",-4);siteProgress(s,p,0,"你把能拍的都拍了，剩下的等对方。")})]},
+  {id:"d4",title:"一场危险动作戏",body:"武指说这个高度可以自己上，也可以用替身，成片效果差一点，但没人会看出来。",
+   opts:(s,p)=>[
+    eventOption("自己上","健康-8，进度明显推进",()=>{add(s,"health",-8);risk(s,"health",4);siteProgress(s,p,3,"那条一次过，监视器后面有人鼓掌。")}),
+    eventOption("加钱做安全防护后自己上","花15万，健康-3，进度顺利",()=>{add(s,"cash",-15);add(s,"health",-3);siteProgress(s,p,2,"防护到位，动作也保住了。")},s.cash<15),
+    eventOption("用替身","没有代价，进度略有损失",()=>{siteProgress(s,p,-1,"替身完成得很干净，只是那个镜头不敢给近景。")})]},
+  {id:"d5",title:"平台要求配合宣传",body:"播出方要你在拍摄间隙录一批短视频物料。剧组的档期本来就紧。",
+   opts:(s,p)=>[
+    eventOption("挤时间全部配合","心理-4，平台好感+4，粉丝+3",()=>{add(s,"mental",-4);relation(s,"han",4);add(s,"fans",3);siteProgress(s,p,0,"物料交了，戏也没落下，只是没睡够。")}),
+    eventOption("请团队代做一部分","花9万，路人缘+2",()=>{add(s,"cash",-9);add(s,"publicFavor",2);siteProgress(s,p,1,"专业团队做的物料反而更好看。")},s.cash<9),
+    eventOption("先把戏拍完","平台好感-3",()=>{relation(s,"han",-3);siteProgress(s,p,1,"你把时间全给了片场。播出方记了一笔。")})]}
+ ],
+ film:[
+  {id:"f1",title:"导演要你为角色改变体态",body:"开机前四周，导演希望你把状态再逼近角色一点。营养师说可以做，但不建议做快。",
+   opts:(s,p)=>[
+    eventOption("按导演要求做到位","健康-9，进度明显推进",()=>{add(s,"health",-9);risk(s,"health",5);relation(s,"gu",5);siteProgress(s,p,3,"你走进片场的第一天，没有人认出你。")}),
+    eventOption("请专业团队慢慢调","花18万，健康-3，进度顺利",()=>{add(s,"cash",-18);add(s,"health",-3);siteProgress(s,p,2,"科学的方法更慢，但结果一样成立。")},s.cash<18),
+    eventOption("靠造型和表演补","没有代价，进度略有损失",()=>{siteProgress(s,p,-1,"造型解决了一部分，剩下的观众会看出来。")})]},
+  {id:"f2",title:"一条长镜头拍到第二十七遍",body:"摄影机没停，全组都在等你。导演没有说话，只是让再来一次。",
+   opts:(s,p)=>[
+    eventOption("继续来","考验表演，成则进度明显推进",()=>{if(siteCheck(s,"acting",84)){relation(s,"gu",4);siteProgress(s,p,3,"第三十一条过了。那天收工时没有人说话。")}else{add(s,"mental",-6);siteProgress(s,p,1,"最后用的是第十九条，导演说够用了。")}}),
+    eventOption("申请拆成分镜","花10万改机位，进度小幅推进",()=>{add(s,"cash",-10);siteProgress(s,p,1,"拆开之后顺利很多，只是气韵断了。")},s.cash<10),
+    eventOption("请导演先过","心理-3，进度略有损失",()=>{add(s,"mental",-3);siteProgress(s,p,-1,"导演过了，但这条不会进正片的高光。")})]},
+  {id:"f3",title:"投资方要砍掉你的重头戏",body:"预算超了。制片人拿着表格找你，说最省钱的做法是删掉那场十二分钟的独角戏。",
+   opts:(s,p)=>[
+    eventOption("自己补上这笔预算","花25万，进度明显推进",()=>{add(s,"cash",-25);relation(s,"zhou",5);siteProgress(s,p,3,"那场戏拍完了。后来它成了预告片的最后一个镜头。")},s.cash<25),
+    eventOption("去说服投资方","考验社交，成则进度顺利",()=>{if(siteCheck(s,"social",82)){relation(s,"zhou",3);siteProgress(s,p,2,"你把这场戏对票房的意义讲清楚了。")}else{risk(s,"contract",4);siteProgress(s,p,-1,"你争取过了，结果是删到六分钟。")}}),
+    eventOption("接受删减","没有代价，进度略有损失",()=>{siteProgress(s,p,-1,"戏删了，角色的转折也跟着不见了。")})]},
+  {id:"f4",title:"内部试映会",body:"粗剪版本放给了二十个人看。散场后导演问你的意见，你知道他真正在问的是别的事。",
+   opts:(s,p)=>[
+    eventOption("说真话，提出要补拍","心理-4，导演好感+5，进度顺利",()=>{add(s,"mental",-4);relation(s,"gu",5);siteProgress(s,p,2,"补拍了三天。那三天救回了整个第三幕。")}),
+    eventOption("自费请剪辑顾问看一遍","花14万，进度小幅推进",()=>{add(s,"cash",-14);siteProgress(s,p,1,"顾问的意见很准，剪辑照做了一半。")},s.cash<14),
+    eventOption("说挺好的","没有代价",()=>{siteProgress(s,p,0,"你说挺好的。导演点了点头，也没再问。")})]},
+  {id:"f5",title:"与前辈同场对戏",body:"对手是拿过三次影帝影后的人。第一条之后，对方在监视器前站了很久。",
+   opts:(s,p)=>[
+    eventOption("请对方指点","考验表演，成则进度明显推进",()=>{if(siteCheck(s,"acting",76)){relation(s,"chen",5);siteProgress(s,p,3,"对方给你讲了半小时。这半小时你会记很多年。")}else{add(s,"mental",-4);siteProgress(s,p,0,"对方只说了一句「再松一点」，你没能领会。")}}),
+    eventOption("加练到能接住","健康-5，心理-3，进度顺利",()=>{add(s,"health",-5);add(s,"mental",-3);siteProgress(s,p,2,"你把台词拆到每个字，第二天接住了。")}),
+    eventOption("按自己的节奏演","没有代价，进度略有损失",()=>{siteProgress(s,p,-1,"两个人的节奏没对上，剪的时候得靠正反打圆。")})]}
+ ],
+ variety:[
+  {id:"v1",title:"你被剪成了这期的反派",body:"预告片放出了一段掐头去尾的对话。评论区已经开始翻你以前的片段。",
+   opts:(s,p)=>[
+    eventOption("找总导演要完整素材","考验社交，成则进度顺利",()=>{if(siteCheck(s,"social",74)){relation(s,"xu",4);siteProgress(s,p,2,"正片播出时补了前因，风向当天就转了。")}else{add(s,"publicFavor",-3);siteProgress(s,p,-1,"节目组说素材已经锁了。")}}),
+    eventOption("让宣传做一轮澄清","花10万，路人缘+3",()=>{add(s,"cash",-10);add(s,"publicFavor",3);siteProgress(s,p,1,"澄清做得干净，没有拉踩节目组。")},s.cash<10),
+    eventOption("不解释","粉圈风险上升",()=>{risk(s,"fandom",4);siteProgress(s,p,0,"你没说话。粉丝替你说了很多话。")})]},
+  {id:"v2",title:"极限环节临时加码",body:"节目组把原定的三小时改成了通宵，说这样才有真实反应。",
+   opts:(s,p)=>[
+    eventOption("全程配合","健康-7，进度明显推进",()=>{add(s,"health",-7);risk(s,"health",3);relation(s,"xu",3);siteProgress(s,p,3,"最后那段素材成了整季的名场面。")}),
+    eventOption("让团队去谈条件","花7万，进度小幅推进",()=>{add(s,"cash",-7);siteProgress(s,p,1,"谈成了缩短两小时，效果打了折。")},s.cash<7),
+    eventOption("按原定时间退出录制","进度略有损失，节目组不满",()=>{relation(s,"xu",-3);siteProgress(s,p,-1,"你走了。那期的高光给了留下的人。")})]},
+  {id:"v3",title:"嘉宾把梗甩给了你",body:"现场安静了两秒。所有摄像机都转过来对着你。",
+   opts:(s,p)=>[
+    eventOption("当场接住","考验综艺感，成则进度明显推进",()=>{if(siteCheck(s,"variety",80)){add(s,"publicFavor",3);siteProgress(s,p,3,"那段被剪成了单条，播放量比正片还高。")}else{add(s,"publicFavor",-2);siteProgress(s,p,-1,"你接的那句没响，尴尬被完整保留了。")}}),
+    eventOption("笑着把话题转开","没有代价",()=>{siteProgress(s,p,0,"你把话岔开了。安全，也没有记忆点。")}),
+    eventOption("录后请编剧补一段设计","花6万，进度小幅推进",()=>{add(s,"cash",-6);siteProgress(s,p,1,"补录的那段更好笑，只是少了点即兴感。")},s.cash<6)]},
+  {id:"v4",title:"录到凌晨四点",body:"最后一个环节还没拍完。有人已经在角落里睡着了。",
+   opts:(s,p)=>[
+    eventOption("撑到收工","健康-6，心理-3，进度顺利",()=>{add(s,"health",-6);add(s,"mental",-3);siteProgress(s,p,2,"你撑完了。那种疲惫拍出来意外地动人。")}),
+    eventOption("请全组喝一轮热的","花4万，团队风险下降，进度小幅推进",()=>{add(s,"cash",-4);risk(s,"team",-4);siteProgress(s,p,1,"没人记得这场戏，很多人记得那杯热的。")},s.cash<4),
+    eventOption("先回酒店","没有代价，进度略有损失",()=>{siteProgress(s,p,-1,"你先走了。缺的那部分用别人的反应补了。")})]}
+ ],
+ music:[
+  {id:"m1",title:"制作人要求重录主歌",body:"宁可听完样带只说了一句：这不是你的声音，这是你以为观众想听的声音。",
+   opts:(s,p)=>[
+    eventOption("重录到他满意","心理-6，制作人好感+5，进度明显推进",()=>{add(s,"mental",-6);relation(s,"ning",5);siteProgress(s,p,3,"第九版之后他没再说话，直接按了保存。")}),
+    eventOption("加钱换更好的棚","花13万，进度顺利",()=>{add(s,"cash",-13);siteProgress(s,p,2,"棚好了，声音干净了，问题解决了一半。")},s.cash<13),
+    eventOption("坚持原来的版本","没有代价，进度略有损失",()=>{relation(s,"ning",-2);siteProgress(s,p,-1,"发出来的是你想要的版本，也是最像别人的版本。")})]},
+  {id:"m2",title:"小样在发行前流出",body:"一段未混音的片段出现在几个音乐论坛里。转发的人都说很喜欢。",
+   opts:(s,p)=>[
+    eventOption("顺势提前放出正式版","知名度+4，粉丝+3，进度小幅推进",()=>{add(s,"fame",4);add(s,"fans",3);siteProgress(s,p,1,"你把节奏抢了回来，讨论度反而涨了。")}),
+    eventOption("花钱清理并追查来源","花11万，团队风险下降",()=>{add(s,"cash",-11);risk(s,"team",-6);siteProgress(s,p,0,"泄露源在外包环节。清干净了，也没了热度。")},s.cash<11),
+    eventOption("不作回应","私生活风险上升",()=>{risk(s,"privacy",4);siteProgress(s,p,0,"你没管。之后又流出了两版。")})]},
+  {id:"m3",title:"要不要自己写词",body:"公司准备了一版成熟的商业词。你手机备忘录里有一版写了两年的。",
+   opts:(s,p)=>[
+    eventOption("用自己写的","考验唱功底子，成则进度明显推进",()=>{if(siteCheck(s,"singing",82)){relation(s,"qin",4);siteProgress(s,p,3,"那版词后来被人一句一句抄在评论区里。")}else{add(s,"mental",-4);siteProgress(s,p,-1,"你的词很真诚，但撑不住这首歌的结构。")}}),
+    eventOption("请人一起改","花9万，进度顺利",()=>{add(s,"cash",-9);siteProgress(s,p,2,"你的意思留住了，句子被人捋顺了。")},s.cash<9),
+    eventOption("用公司那版","没有代价",()=>{siteProgress(s,p,0,"稳妥的词，稳妥的成绩。")})]},
+  {id:"m4",title:"打歌舞台前的加练",body:"编舞老师说，这套动作用三周能练成，你只有九天。",
+   opts:(s,p)=>[
+    eventOption("九天练成","健康-8，进度明显推进",()=>{add(s,"health",-8);risk(s,"health",4);siteProgress(s,p,3,"直拍出来的那天，你自己反复看了很多遍。")}),
+    eventOption("请老师私教加课","花12万，健康-3，进度顺利",()=>{add(s,"cash",-12);add(s,"health",-3);siteProgress(s,p,2,"练到能上台，也没伤到。")},s.cash<12),
+    eventOption("简化编舞","没有代价，进度略有损失",()=>{siteProgress(s,p,-1,"简化后的版本很安全，也很难被记住。")})]}
+ ],
+ endorsement:[
+  {id:"e1",title:"品牌方临时加拍海外物料",body:"合同里没有这一条。品牌方说，如果配合，明年的续约可以再谈。",
+   opts:(s,p)=>[
+    eventOption("飞过去拍","健康-6，品牌好感+5，商业价值+3",()=>{add(s,"health",-6);relation(s,"lin",5);add(s,"commercial",3);siteProgress(s,p,2,"物料在海外投得很凶，国内也跟着看见了。")}),
+    eventOption("自费带团队同行","花16万，进度顺利",()=>{add(s,"cash",-16);siteProgress(s,p,2,"团队跟到位，成片质量没有妥协。")},s.cash<16),
+    eventOption("按合同拒绝","合约风险上升，进度略有损失",()=>{risk(s,"contract",4);relation(s,"lin",-3);siteProgress(s,p,-1,"你有理，但品牌方把预算挪去了别人身上。")})]},
+  {id:"e2",title:"广告脚本里有一句争议表述",body:"文案很抓眼球，也很容易被截出来单独讨论。品牌方觉得没问题。",
+   opts:(s,p)=>[
+    eventOption("要求改掉","考验社交，成则进度顺利",()=>{if(siteCheck(s,"social",76)){relation(s,"pei",4);siteProgress(s,p,2,"改后的版本更稳，品牌方后来说幸好改了。")}else{relation(s,"pei",-3);siteProgress(s,p,0,"品牌方坚持原文案，你签了字。")}}),
+    eventOption("请公关团队重写一版","花8万，路人缘+2",()=>{add(s,"cash",-8);add(s,"publicFavor",2);siteProgress(s,p,1,"新文案更聪明，品牌方直接采用了。")},s.cash<8),
+    eventOption("照着念","路人缘-3，进度略有损失",()=>{add(s,"publicFavor",-3);siteProgress(s,p,-1,"广告播出后，那一句被单独做成了表情包。")})]},
+  {id:"e3",title:"竞品同时找上门",body:"报价高出四成。合同上的排他条款写得很含糊，法务说打起来不一定输。",
+   opts:(s,p)=>[
+    eventOption("接下来","现金+35万，合约风险大幅上升",()=>{add(s,"cash",round(35*DIFF(s).cashMul,0));risk(s,"contract",14);s.track.gray++;siteProgress(s,p,-1,"钱到账了。原品牌的法务函三天后也到了。")}),
+    eventOption("请法务先厘清条款","花7万，合约风险下降",()=>{add(s,"cash",-7);risk(s,"contract",-6);siteProgress(s,p,1,"条款理清楚了，你干干净净地拒绝了对方。")},s.cash<7),
+    eventOption("直接回绝","品牌好感+4",()=>{relation(s,"pei",4);siteProgress(s,p,1,"你回绝得很快。品牌方知道了这件事。")})]},
+  {id:"e4",title:"品牌要求配合一场联名直播",body:"三小时，纯带货。经纪人说这不在你的形象规划里，但数字会很好看。",
+   opts:(s,p)=>[
+    eventOption("接下这场","现金+18万，商业价值+4，人设违和",()=>{add(s,"cash",round(18*DIFF(s).cashMul,0));add(s,"commercial",4);if(s.image&&s.image.established)s.image.heat=(s.image.heat||0)+1;siteProgress(s,p,1,"数字确实好看。有人问你什么时候变成这样了。")}),
+    eventOption("只做半小时露出","花5万补差价，进度小幅推进",()=>{add(s,"cash",-5);siteProgress(s,p,1,"露个面就走，双方都还过得去。")},s.cash<5),
+    eventOption("推掉","品牌好感-3",()=>{relation(s,"lin",-3);siteProgress(s,p,0,"你推掉了。品牌方找了更合适的人。")})]}
+ ]
+};
+function siteEligible(s){return(s.activeProjects||[]).filter(p=>p.duration>=2&&p.endMonth>s.month&&SITE_EVENTS[p.type]&&p.siteMonth!==s.month)}
+function pickSiteEvent(s,type){
+ const pool=SITE_EVENTS[type];let rows=pool.filter(e=>!s.siteSeen.includes(e.id));
+ if(!rows.length){s.siteSeen=s.siteSeen.filter(id=>!pool.some(e=>e.id===id));rows=pool} /* 池子见完后重置该池，不做硬性单局去重 */
+ const e=pick(rows);s.siteSeen.push(e.id);return e;
+}
+function siteEventTasks(s){
+ v5Init(s);const tasks=[];
+ siteEligible(s).forEach(p=>{
+  if(tasks.length)return; /* 每月最多一条片场事件，避免月末弹窗堆积 */
+  if(Math.random()>=(s.month>p.startMonth?SITE_CHANCE:SITE_CHANCE_OPEN))return;
+  p.siteMonth=s.month;s.siteCount++;
+  const e=pickSiteEvent(s,p.type);
+  tasks.push(()=>showModal(`片场 · ${e.title}`,e.body,e.opts(s,p)));
+ });
+ return tasks;
+}
+
+/* ══════════════ 十二、窗口期与档期竞争 ══════════════ */
+
+const WINDOW_RATE=.3,CONTEST_RATE=.2,PROJECT_HOLD=1; /* 每月最多留存1个非限时机会：留存过多会稀释「限时」标记的比例与分量 */
+function tagProject(s,p){
+ if(!p||p.tagged)return p;p.tagged=1;
+ if(p.source==="market"&&Math.random()<WINDOW_RATE)p.window=1;
+ /* 高价值项目才值得对手出手；公司安排的项目不走公开竞争 */
+ if(p.source!=="company"&&(p.fee>=80||p.repGain>=12)&&Math.random()<CONTEST_RATE){
+  const r=pick(s.competitors||[]);
+  if(r){p.contested=true;p.rivalId=r.id;p.rivalName=r.name;p.direct=true;p.window=1} /* 明面竞争取代匿名试镜，且不会等你 */
+ }
+ return p;
+}
+/* 未标「限时」的市场机会最多留存一个月，让「限时」两个字真的有分量 */
+function refreshProjects(s){
+ v5Init(s);
+ const held=(s.projects||[]).filter(p=>p.status==="open"&&p.source==="market"&&!p.window&&(p.hold||0)<1);
+ held.forEach(p=>p.hold=(p.hold||0)+1);
+ const carry=held.slice(0,PROJECT_HOLD),titles=new Set(carry.map(p=>p.title));
+ const fresh=generateProjects(s).map(p=>tagProject(s,p));
+ const rows=[fresh[0],...carry,...fresh.slice(1).filter(p=>!titles.has(p.title))].slice(0,6);
+ if(s.relicScript&&s.month===3){s.relicScript=false;rows[rows.length-1]=relicScriptProject(s);gameLog(s,"good","那个没能拍完的本子，绕了一圈又回到了你手上。");toast("未拍完的剧本","good")}
+ return rows;
+}
+function contestChance(s,p){return clamp(auditionChance(s,p)-.06,.05,.9)} /* 明面竞争比匿名试镜略难 */
+function contestProject(id){
+ const p=S.projects.find(x=>x.id===id);if(!p||p.status!=="open")return;
+ if(!needEnergy())return;
+ const ch=contestChance(S,p);
+ showModal(`档期竞争 · ${p.title}`,`${p.rivalName}也在争这个位置。制片方把两边的资料摆在同一张桌子上，说下周给答复。`,[
+  eventOption("正面争这个位置",`把握${chanceText(ch)}，花1行动力`,()=>contestRoll(id)),
+  eventOption("让出去","不花行动力，项目作废",()=>refuseProject(id))]);
+}
+function contestRoll(id){
+ const p=S.projects.find(x=>x.id===id);if(!p||p.status!=="open")return;
+ const ch=contestChance(S,p),c=(S.competitors||[]).find(x=>x.id===p.rivalId);
+ S.track.auditions++;spend();
+ if(Math.random()<ch){
+  S.track.auditionWins++;p.contestResolved=true;
+  if(c)c.score=clamp(c.score-2,12,125);
+  relation(S,p.rivalId,-2);
+  tickerPush(`#${esc(p.title)}主演定了${esc(S.playerName)}#`,"gold");toast("你争到了这个位置","good");
+  gameLog(S,"good",`在${p.title}的竞争里胜过了${p.rivalName}。`);
+  showModal("你拿到了这个位置",`制片方最后选了你。${p.rivalName}的团队当天就把已经写好的通稿撤了。`,
+   [eventOption("签下项目",`档期${p.duration}个月`,()=>acceptProject(id)),eventOption("再想想","项目仍在池子里",()=>{})]);
+ }else{
+  p.status="lost";
+  if(c)c.score=clamp(c.score+4,12,125);
+  relation(S,p.rivalId,-1);
+  gameLog(S,"bad",`${p.title}的位置被${p.rivalName}拿走，对方的行业排名跟着往上走了一格。`);
+  tickerPush(`#${esc(p.rivalName)}确定出演${esc(p.title)}#`,"red");toast(`${p.rivalName}抢走了这个位置`,"bad");shake();
+  showModal("位置没有了",`制片方给的理由很体面。三天后，${p.rivalName}的定妆照发了出来，评论区在夸这个选择合适。`,[{text:"记下这个名字"}]);
+ }
+ renderAll();
+}
+function projectFlags(p){
+ let h="";
+ if(p.status==="open"&&p.window)h+=`<span class="attr warning">限时·仅本月</span>`;
+ if(p.status==="open"&&p.contested&&!p.contestResolved)h+=`<span class="attr contest">${esc(p.rivalName)}在争</span>`;
+ return h;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   《模拟明星》v4 · 批次3
+   风险伏笔两段式（P1-2） · CP营业系统（P1-4）
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ---------- 新增状态字段：initialState 与 load() 迁移共用，必须幂等 ---------- */
+function v6Init(s){
+ if(!s)return s;
+ if(!Array.isArray(s.foreshadow))s.foreshadow=[];
+ if(!s.foreshadowNew)s.foreshadowNew=null;
+ if(!s.riskPrev||typeof s.riskPrev!=="object")s.riskPrev={...(s.risks||{})};
+ Object.keys(s.risks||{}).forEach(k=>{if(typeof s.riskPrev[k]!=="number")s.riskPrev[k]=s.risks[k]});
+ if(!("cpContract"in s))s.cpContract=null;
+ if(!Array.isArray(s.cpHistory))s.cpHistory=[];
+ return s;
+}
+
+/* ══════════════ 十三、风险伏笔（爆发前的预警） ══════════════ */
+
+/* 与 priors 的分工：伏笔是爆发之前的暧昧信号，priors 是爆发之后的旧事重提，两套互不干扰。 */
+const FORESHADOW_LINE=55,FORESHADOW_CLEAR=40,FORESHADOW_RATE=.3,FORESHADOW_GRACE=3;
+const FORESHADOWS={
+ contract:[
+  "法务这周把你的合同调出来复印了一份。经纪人说是例行归档，语气比平时快了一点。",
+  "公司内部会议的与会名单里，第一次出现了一个你不认识的外部律师。没有人向你介绍他。"],
+ tax:[
+  "财务把一份三年前的合同复印件单独锁进了柜子。你问起时，对方说这是流程。",
+  "工作室换了一家会计事务所。新来的会计问了很多关于前年的问题，问得很客气，也很细。"],
+ health:[
+  "体检报告里有一项指标标了黄色。医生说下次复查再看，不用紧张。",
+  "你已经连续第五天在同一个时间醒来，然后再也睡不着。窗外的天还没亮。"],
+ mental:[
+  "你发现自己开始记不住台词的第二段。以前从来不会。",
+  "化妆师说你最近很少笑了。你说是角色需要。她点点头，没有再说什么。"],
+ privacy:[
+  "小区门口那辆停了三天的车，今天换了个位置，还在。",
+  "有人在超话里贴了一张你家窗帘的照片，配文只有一个表情。帖子二十分钟后被删了。"],
+ team:[
+  "助理这个月第二次把日程发错。她道歉的语气比上一次淡。",
+  "团队群里有人退出了又加回来。没有人提这件事，包括当事人。"],
+ fandom:[
+  "后援会的公告删了又发，措辞一次比一次硬。评论区关了。",
+  "几个大粉的账号在同一天集体设置了仅半年可见。你不知道她们在清什么。"],
+ image:[
+  "有人把你三年前和上个月的两段采访剪在了一起。播放量还在涨。",
+  "一条「本人根本不是这样」的评论被顶到了热评第二。没有人举证，也没有人反驳。"]
+};
+function foreshadowActive(s,k){return!!(s.foreshadow||[]).find(f=>f.risk===k)}
+function foreshadowNames(s){return(s.foreshadow||[]).map(f=>RISK_NAMES[f.risk])}
+/* 月度结算：先消解已有伏笔，再检测新的跨线 */
+function foreshadowSettle(s){
+ v6Init(s);
+ s.foreshadow=s.foreshadow.filter(f=>{
+  if(s.risks[f.risk]>=FORESHADOW_CLEAR)return true;
+  if(s.month-f.month<=FORESHADOW_GRACE){add(s,"mental",3);gameLog(s,"good",`${RISK_NAMES[f.risk]}方面的那点苗头，最后什么也没发生。虚惊一场。`);toast("虚惊一场","good")}
+  else gameLog(s,"",`${RISK_NAMES[f.risk]}的隐患总算压了下去。`);
+  return false;
+ });
+ Object.keys(s.risks).forEach(k=>{
+  const prev=typeof s.riskPrev[k]==="number"?s.riskPrev[k]:s.risks[k];
+  if(prev<FORESHADOW_LINE&&s.risks[k]>=FORESHADOW_LINE&&!foreshadowActive(s,k)&&Math.random()<FORESHADOW_RATE){
+   const idx=Math.floor(Math.random()*FORESHADOWS[k].length);
+   s.foreshadow.push({risk:k,month:s.month,idx});
+   s.foreshadowNew={risk:k,idx}; /* 留到 doEndMonth 里展示；若当月被风险征兆占位，则顺延到下月 */
+  }
+ });
+ s.riskPrev={...s.risks};
+}
+function foreshadowTask(s){
+ if(!s.foreshadowNew)return null;
+ const{risk:k,idx}=s.foreshadowNew;s.foreshadowNew=null;
+ return()=>showModal(`隐约的信号 · ${RISK_NAMES[k]}`,FORESHADOWS[k][idx],[{text:"知道了"}]);
+}
+/* 伏笔存在期间，该风险的灾难爆发概率翻倍（0.48 → 0.96，留一线余地封顶 0.9） */
+function foreshadowDisasterCut(s,k){return foreshadowActive(s,k)?Math.min(.9,.48*2):.48}
+
+/* ══════════════ 十四、CP营业 ══════════════ */
+
+const CP_TERM=6;
+function cpEligible(s,n){return!!(n&&n.group==="艺人"&&orientationAllows(n)&&n.fav>=55&&!s.cpContract)}
+function cpPartner(s){return s.cpContract?s.npcs.find(n=>n.id===s.cpContract.id):null}
+function cpPropose(id){
+ const n=S.npcs.find(x=>x.id===id);if(!n||!cpEligible(S,n))return;
+ if(!needEnergy())return;
+ showModal(`和${n.name}谈一次CP营业`,`两边团队算过了：合体物料的转化比各自单飞高得多。这是一份为期${CP_TERM}个月的默契，不是一段关系。粉丝会当真，这正是它有用的地方，也是它的代价。`,[
+  eventOption("签下这份默契",`${CP_TERM}个月内每月知名度+2、粉丝+2；唯粉不满，粉圈风险每月+2`,()=>{
+   S.cpContract={id,name:n.name,start:S.month,end:S.month+CP_TERM-1,renewed:false};
+   relation(S,id,4);add(S,"fame",2);
+   gameLog(S,"good",`你和${n.name}开始了一段为期${CP_TERM}个月的CP营业。`);
+   splash("官 宣 营 业",`${S.playerName} × ${n.name}`,"good");
+   tickerPush(`#${esc(S.playerName)}${esc(n.name)}同框#`,"gold");toast("CP营业开始","good");
+   spend();
+  }),
+  eventOption("还是算了","不花行动力",()=>{})]);
+}
+function cpMenu(){
+ const c=S.cpContract;if(!c)return;
+ const left=c.end-S.month+1;
+ showModal(`CP营业 · ${c.name}`,`营业期还剩${left>0?left:0}个月。${S.romanceId?"你自己清楚哪一段是真的，狗仔也在赌这件事。":"目前为止，两边的说法是一致的。"}`,[
+  eventOption("加一次合体物料","花6万，粉丝+4，粉圈风险+3",()=>{add(S,"cash",-6);add(S,"fans",4);risk(S,"fandom",3);relation(S,c.id,2);gameLog(S,"good",`你和${c.name}又发了一组合体物料。`)},S.cash<6),
+  eventOption("提前解约","路人缘-3，对方好感-8",()=>{cpEnd("early")}),
+  eventOption("先这样","不花钱",()=>{})]);
+}
+/* 营业期满：官宣挚友体面收场 或 续约 */
+function cpExpireTask(s){
+ const c=s.cpContract;if(!c||s.month<c.end)return null;
+ return()=>showModal(`营业到期 · ${c.name}`,`${CP_TERM}个月的约定到期了。两边团队在问下一步：是体面地收在这里，还是继续下去。继续下去的代价是，越来越多的人会发现这是一门生意。`,[
+  eventOption("官宣挚友，体面收场","路人缘+3，粉圈风险下降",()=>cpEnd("friend")),
+  eventOption("续约再走一程","收益照旧，但粉丝忠诚开始按月流失",()=>{
+   c.renewed=true;c.end=s.month+CP_TERM;
+   gameLog(s,"bad",`你和${c.name}的营业续了约。唯粉开始成批地走。`);
+   toast("营业续约","warn");tickerPush(`#${esc(c.name)}${esc(s.playerName)}又双叒同框#`,"");
+  })]);
+}
+function cpEnd(mode){
+ const c=S.cpContract;if(!c)return;
+ if(mode==="friend"){add(S,"publicFavor",3);risk(S,"fandom",-8);relation(S,c.id,3);gameLog(S,"good",`你和${c.name}官宣了挚友关系，把这段营业收得很干净。`);toast("体面收场","good")}
+ else{add(S,"publicFavor",-3);relation(S,c.id,-8);risk(S,"fandom",6);gameLog(S,"bad",`你和${c.name}的营业提前中止，双方团队谁也没有解释。`);toast("营业中止","bad")}
+ S.cpHistory.push({id:c.id,name:c.name,start:c.start,end:S.month,mode});
+ S.cpContract=null;save();renderAll();
+}
+/* 月度被动：收益、代价与系统联动 */
+function cpSettle(s){
+ v6Init(s);const c=s.cpContract;if(!c)return;
+ add(s,"fame",2);add(s,"fans",2);
+ risk(s,"fandom",2); /* 唯粉不满 */
+ if(s.romanceId)risk(s,"privacy",4); /* 真假两条线同时存在，狗仔的性价比最高 */
+ if(c.renewed)add(s,"fans",-1); /* 续约后唯粉按月出走 */
+ if(s.image&&s.image.established&&s.image.tag==="devoted")s.image.heat=(s.image.heat||0)+1; /* 深情人设与公开营业相冲 */
+}
+function cpPaparazziMul(s){return(s.cpContract&&s.romanceId)?2:1}
+function cpProjectMul(s,p){return p.cpBoost?1.5:1}
+
+/* ══════════════════════════════════════════════════════════════════
+   《模拟明星》v4 · 批次4
+   传承2.0 星路遗产（P1-3） · 新开局解锁（P2-3） · 结局差距提示（P2-2）
+   ══════════════════════════════════════════════════════════════════ */
+
+function v7Init(s){
+ if(!s)return s;
+ if(typeof s.relicScript!=="boolean")s.relicScript=false;
+ if(!s.relicId)s.relicId=null;
+ if(s.background==="washed"&&s.flags&&!s.flags.comebackReady)s.flags.comebackReady=1;
+ return s;
+}
+
+/* ══════════════ 十五、星路遗产（传承2.0） ══════════════ */
+
+/* meta 兼容：旧 meta 只有 legacy，没有 relic。startCareer 优先读 relic，读不到就退回 legacy，旧档不受影响。 */
+function relicCandidates(s,good){
+ const rows=[];
+ const trust=Math.min(60,Math.max(0,Math.round(Math.max(0,s.cash)*.15)));
+ rows.push({id:"trust",name:"遗产信托",desc:`把这一局剩下的钱折进下一段星途：开局现金 +${trust}万`,cash:trust});
+ const friends=s.npcs.filter(n=>n.fav>=70).sort((a,b)=>b.fav-a.fav).slice(0,3);
+ if(friends.length)rows.push({id:"call",name:"前辈的电话",desc:"留一个还会接你电话的人：下一段星途中，选定的这位初始好感 +20",pickFrom:friends.map(n=>({id:n.id,name:n.name,title:n.title}))});
+ if(s.track.bestQuality>=85)rows.push({id:"script",name:"未拍完的剧本",desc:"一个没能拍成的本子：下一段星途第3个月，必定出现一个高质量影视项目",script:true});
+ if(!good)rows.push({id:"memoir",name:"塌房回忆录",desc:"你把摔过的地方都记了下来：下一段星途所有风险起始 −6",riskDelta:-6});
+ return rows;
+}
+/* 遗物 → extInit 认识的 legacy 结构 + 批次4 新增的两个字段 */
+function relicToLegacy(r){
+ if(!r)return null;
+ const note={trust:"上一位留下的一笔钱",call:`上一位留下的一个电话号码：${r.pickName||""}`,script:"上一位没能拍完的那个本子",memoir:"上一位摔过的地方，都写在了本子上"}[r.id]||"上一段星途留下的东西";
+ return{cash:r.cash||0,fame:0,favor:r.id==="call"?20:0,favorIds:r.pickId?[r.pickId]:[],riskDelta:r.riskDelta||0,script:!!r.script,relicId:r.id,relicName:r.name,note};
+}
+/* 只在开新局时执行一次，迁移路径不走这里 */
+function applyRelic(s){
+ const L=s.legacy;if(!L)return s;
+ s.relicId=L.relicId||null;
+ if(L.riskDelta)Object.keys(s.risks).forEach(k=>{s.risks[k]=clamp(s.risks[k]+L.riskDelta,0,120)});
+ if(L.script)s.relicScript=true;
+ return s;
+}
+/* 「未拍完的剧本」：第3个月顶掉一个市场机会，换成一个直接邀约的高质量影视项目 */
+function relicScriptProject(s){
+ const pool=PROJECT_TEMPLATES.filter(t=>["film","drama"].includes(t.type)&&t.rep>=7);
+ const p=makeProject(pick(pool),"market",s,77);
+ p.difficulty=Math.round(p.difficulty*.85);p.prep=(p.prep||0)+5;p.direct=true;p.window=1;p.tagged=1;
+ p.desc="上一段星途没能拍完的本子，兜兜转转又回到了你手上。";
+ return p;
+}
+let RELIC_ROWS=[],RELIC_PICKED=null;
+function relicOffer(s,good){RELIC_ROWS=relicCandidates(s,good);RELIC_PICKED=null;renderRelicBox()}
+function relicChoose(idx,pickIdx){
+ const r=RELIC_ROWS[idx];if(!r)return;
+ const relic={...r};delete relic.pickFrom;
+ if(r.pickFrom&&r.pickFrom.length){const n=r.pickFrom[pickIdx||0];relic.pickId=n.id;relic.pickName=n.name}
+ try{const m=loadMeta();m.relic=relic;if(m.hall&&m.hall[0])m.hall[0].relic=relic.name;saveMeta(m)}catch(e){}
+ RELIC_PICKED=relic;
+ renderRelicBox();
+ toast("已留下："+relic.name,"good");
+}
+function renderRelicBox(){
+ const box=typeof document!=="undefined"&&document.getElementById?document.getElementById("relicBox"):null;if(!box)return;
+ const rows=RELIC_ROWS,got=RELIC_PICKED;
+ if(got){box.innerHTML=`<div class="relic-done"><b>✦ ${esc(got.name)}</b><small>${esc(got.desc)}${got.pickName?`　（${esc(got.pickName)}）`:""}</small></div>`;return}
+ box.innerHTML=rows.map((r,i)=>r.pickFrom&&r.pickFrom.length>1
+  ?`<div class="relic-pick"><b>${esc(r.name)}</b><small>${esc(r.desc)}</small><div class="badges">${r.pickFrom.map((n,j)=>`<button class="choice relic-mini" onclick="relicChoose(${i},${j})">${esc(n.name)}</button>`).join("")}</div></div>`
+  :`<button class="choice" onclick="relicChoose(${i},0)"><b>${esc(r.name)}${r.pickFrom?`　（${esc(r.pickFrom[0].name)}）`:""}</b><small>${esc(r.desc)}</small></button>`).join("");
+}
+
+/* ══════════════ 十六、新开局解锁 ══════════════ */
+
+function metaHall(){try{return(loadMeta().hall)||[]}catch(e){return[]}}
+const UNLOCKS={
+ star2:{kind:"background",need:"名人堂里有任意一个好结局",test:h=>h.some(x=>x.good)},
+ washed:{kind:"background",need:"经历过「过气与转型」结局",test:h=>h.some(x=>x.title==="过气与转型")},
+ yuanhang:{kind:"company",need:"达成过「双星并耀」结局",test:h=>h.some(x=>x.title==="双星并耀")}
+};
+function optionUnlocked(id){const u=UNLOCKS[id];if(!u)return true;try{return u.test(metaHall())}catch(e){return false}}
+Object.assign(BACKGROUNDS,{
+ star2:{name:"星二代",desc:"起点比谁都高，也比谁都被盯得紧。",cash:40,fame:42,publicFavor:38,commercial:38,fans:40,health:74,mental:64,skills:{acting:48,singing:42,variety:46,fashion:58,social:56},risk:{contract:16,tax:22,health:16,mental:26,privacy:44,team:14,fandom:26}},
+ washed:{name:"糊咖回锅",desc:"红过一阵，糊了三年。观众还记得你，只是记得的方式不太好。",cash:6,fame:22,publicFavor:44,commercial:14,fans:24,health:62,mental:52,skills:{acting:52,singing:44,variety:56,fashion:42,social:48},risk:{contract:22,tax:14,health:26,mental:38,privacy:24,team:20,fandom:16}}
+});
+Object.assign(COMPANIES,{
+ yuanhang:{name:"远航国际",desc:"海外资源为主，看重作品的国际卖相。",share:.5,power:.1,quality:4,market:.06,advance:10,breakFee:150,boss:null,color:"cyan"}
+});
+/* 远航国际独有事件：只在签这家公司时进池 */
+EVENTS.push(
+ {id:"yh_festival",title:"一个海外电影节的邀请",cond:()=>S.company==="yuanhang",body:"选片人看了你的片段，希望你去走一次红毯，顺便见几位制片。机票自理，行程七天。",
+  opts:()=>[eventOption("自费去一趟","花14万，路人缘+4，商业价值+3",()=>{add(S,"cash",-14);add(S,"publicFavor",4);add(S,"commercial",3);S.persona.actor+=3;relation(S,"gu",3)},S.cash<14),
+   eventOption("让公司安排","公司关系-4，商业价值+2",()=>{S.companyFavor=clamp(S.companyFavor-4);add(S,"commercial",2)}),
+   eventOption("推掉","不花钱，也什么都没有发生",()=>{add(S,"mental",1)})]},
+ {id:"yh_coprod",title:"一部合拍片在找人",cond:()=>S.company==="yuanhang",body:"两边的制片方都同意了，唯一的问题是台词有一半不是中文。留给你的准备时间是六周。",
+  opts:()=>[eventOption("接下来，从头练","健康-6，表演和社交提升",()=>{add(S,"health",-6);gainSkill(S,"acting",4);gainSkill(S,"social",4);flushMastery()}),
+   eventOption("请语言指导全程跟组","花16万，表演提升，风险更低",()=>{add(S,"cash",-16);gainSkill(S,"acting",3);flushMastery();risk(S,"mental",-3)},S.cash<16),
+   eventOption("换一个国内项目","公司关系-3",()=>{S.companyFavor=clamp(S.companyFavor-3)})]},
+ {id:"yh_longhaul",title:"连续第四个月在国外",cond:()=>S.company==="yuanhang",body:"时差已经调不回来了。国内的热搜换了三轮，没有一条和你有关。",
+  opts:()=>[eventOption("留在剧组拍完","健康-5，作品优先，知名度回落",()=>{add(S,"health",-5);add(S,"fame",-4);S.persona.actor+=4;add(S,"publicFavor",2)}),
+   eventOption("飞回来做一轮营业","花9万，知名度+5，健康-4",()=>{add(S,"cash",-9);add(S,"fame",5);add(S,"health",-4);risk(S,"health",4)},S.cash<9),
+   eventOption("让团队发通稿维持存在感","粉圈风险+4",()=>{risk(S,"fandom",4);add(S,"fame",2)})]}
+);
+
+/* ══════════════ 十七、星途预感（结局差距提示） ══════════════ */
+
+const OMEN_MONTH=30;
+/* 只给方向，不给数字——保留探索感 */
+const OMENS=[
+ {title:"人设封神",parts:s=>[[s.image.established&&s.image.coherence>=80,"人设还需要更长时间的自洽"],[s.image.believers>=25,"信仰粉的数量还不够"],[myRank(s)<=2,"排名还差一点"]]},
+ {title:"顶流中心",parts:s=>[[myRank(s)===1,"榜首还在别人手里"],[s.fame>=85,"知名度还差一截"],[s.fans>=70,"粉丝黏性还不够硬"]]},
+ {title:"商业宠儿",parts:s=>[[s.track.endorsement>=7,"还差几份大代言"],[s.commercial>=82,"商业价值还没到品牌方点名的程度"],[s.cash>120,"账上的钱还不够说话"]]},
+ {title:"综艺常青树",parts:s=>[[s.track.variety>=7,"综艺的数量还不够"],[s.persona.variety>=24,"观众还没把你和综艺绑在一起"]]},
+ {title:"干净的名字",parts:s=>[[s.track.gray===0,"手上已经有过说不清的操作"],[s.publicFavor>=78,"路人缘还差一段"],[(s.health+s.mental)/2>=65,"身心状态撑不到那一天"]]},
+ {title:"独立工作室",parts:s=>[[s.independent,"还没有从公司出来"],[s.cash>90,"独立需要的家底还不够"],[myRank(s)<=3,"排名还不足以独立接活"]]},
+ {title:"双星并耀",parts:s=>[[(s.npcs.find(n=>n.id==="rival_main")||{fav:0}).fav>=82,"和那个人还没走得那么近"],[Math.abs(playerScore(s)-((s.competitors.find(c=>c.main)||{score:0}).score))<10,"你们之间的差距还太大"]]},
+ {title:"影帝影后",parts:s=>[[s.track.awards>=2,"奖杯还不够"],[s.persona.actor>=18,"行业还没把你当成演员"]]},
+ {title:"金曲歌王歌后",parts:s=>[[s.track.awards>=1,"还没有拿过一座奖"],[s.persona.music>=20,"作品还撑不起音乐人的身份"]]}
+];
+function omens(s){
+ const rows=OMENS.map(o=>{const ps=o.parts(s),miss=ps.filter(x=>!x[0]);
+  return{title:o.title,done:ps.length-miss.length,total:ps.length,ratio:(ps.length-miss.length)/ps.length,miss:miss.map(x=>x[1])}})
+  .filter(r=>r.miss.length)
+  .sort((a,b)=>b.ratio-a.ratio||a.miss.length-b.miss.length);
+ return rows.slice(0,2);
+}
+function renderOmens(){
+ if(!S||S.month<OMEN_MONTH)return"";
+ const rows=omens(S);if(!rows.length)return"";
+ return`<div class="section-head"><h2>星途预感</h2><span>最后几个月了</span></div>${rows.map(r=>`<div class="card omen-card"><div class="row"><h3>距离「${esc(r.title)}」</h3><span class="pill gold">${r.done}/${r.total}</span></div><div class="copy">${r.miss.map(esc).join("；")}。</div></div>`).join("")}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   《模拟明星》v4 · 批次5
+   事件池标签化扩容（P2-1） · 颁奖礼细分（P2-4）
+   ══════════════════════════════════════════════════════════════════ */
+
+function v8Init(s){
+ if(!s)return s;
+ if(typeof s.runIndex!=="number"){let r=0;try{r=loadMeta().runs||0}catch(e){}s.runIndex=r}
+ return s;
+}
+
+/* ══════════════ 十八、事件标签与加权抽取 ══════════════ */
+
+/* 硬门槛走 cond（人设／公司／独立／知名度），tags 只做软加权：
+   阶段吻合的事件权重拉高，跨局刚见过的降权但不禁止——避免二周目开局就重复，也不至于把内容锁死。 */
+function stageOf(s){return s.month<=12?"early":s.month<=24?"mid":"late"}
+function metaSeen(){try{const m=loadMeta();return{seen:m.seen||{},runs:m.runs||0}}catch(e){return{seen:{},runs:0}}}
+function markEventSeen(id){try{const m=loadMeta();m.seen=m.seen||{};m.seen[id]=m.runs||0;saveMeta(m)}catch(e){}}
+function eventWeight(s,e,seen,runs){
+ let w=1,t=e.tags||{};
+ if(t.stage)w*=t.stage===stageOf(s)?2.5:.4;
+ if(t.image&&s.image&&s.image.tag===t.image)w*=2; /* 顺人设的事件更容易发生在人设正当红的时候 */
+ const last=seen[e.id];
+ if(typeof last==="number"&&runs-last<2)w*=.35; /* 最近两局见过：降权，不禁止 */
+ return Math.max(.05,w);
+}
+function weightedEvent(s,rows){
+ const{seen,runs}=metaSeen(),ws=rows.map(e=>eventWeight(s,e,seen,runs));
+ let total=ws.reduce((a,b)=>a+b,0),r=Math.random()*total;
+ for(let i=0;i<rows.length;i++){r-=ws[i];if(r<=0)return rows[i]}
+ return rows[rows.length-1];
+}
+const imageIs=tag=>S.image&&S.image.established&&S.image.tag===tag;
+
+/* ══════════════ 十九、事件扩容：人设 · 独立 · 高知名度 · 公司 · 阶段 ══════════════ */
+
+EVENTS.push(
+/* ── 实力清流：作品是资产，也是不许你下凡的牢笼 ── */
+ {id:"pur_1",title:"一档综艺开出了天价",cond:()=>imageIs("purist"),tags:{image:"purist"},body:"报价是你上一部电影片酬的两倍，节目组承诺不设剧本。经纪人说，这个数字一年只会出现一次。",
+  opts:()=>[eventOption("接下来","现金+45万，人设违和",()=>{add(S,"cash",round(45*DIFF(S).cashMul,0));add(S,"commercial",5);S.image.heat=(S.image.heat||0)+2;S.persona.variety+=4;gameLog(S,"bad","你上了那档综艺。播出那周，有人在长评里写「他终于也去了」。")}),
+   eventOption("只录一期客串","现金+12万，影响可控",()=>{add(S,"cash",round(12*DIFF(S).cashMul,0));S.image.heat=(S.image.heat||0)+1;S.persona.variety+=1}),
+   eventOption("推掉","路人缘+2，人设契合度上升",()=>{add(S,"publicFavor",2);S.image.coherence=clamp(S.image.coherence+4);S.persona.actor+=2})]},
+ {id:"pur_2",title:"有人说你的清高是装的",cond:()=>imageIs("purist"),tags:{image:"purist",stage:"mid"},body:"一篇长文列举了你所有拒绝过的商务，结论是：不是不想接，是接不到。转发的人比反驳的人多。",
+  opts:()=>[eventOption("晒出全部拒约记录","花6万公证，路人缘+5，显得计较",()=>{add(S,"cash",-6);add(S,"publicFavor",5);add(S,"fans",-2);risk(S,"fandom",3)},S.cash<6),
+   eventOption("用下一部作品回答","不花钱，人设契合度+6",()=>{S.image.coherence=clamp(S.image.coherence+6);S.persona.actor+=3;add(S,"mental",-3)}),
+   eventOption("不看也不回","路人缘-2，心理+2",()=>{add(S,"publicFavor",-2);add(S,"mental",2)})]},
+/* ── 深情偶像：感情是卖点，也是随时会引爆的雷 ── */
+ {id:"dev_1",title:"机场有人喊你的名字",cond:()=>imageIs("devoted"),tags:{image:"devoted"},body:"人群里有人举着牌子问你：是不是恋爱了。镜头在你脸上停了三秒。你什么都还没说。",
+  opts:()=>[eventOption("笑着说「在忙工作」","粉丝+4，私生活风险+3",()=>{add(S,"fans",4);risk(S,"privacy",3);S.image.coherence=clamp(S.image.coherence+2)}),
+   eventOption("认真回一句「这是我的私事」","路人缘+4，粉丝-3",()=>{add(S,"publicFavor",4);add(S,"fans",-3);S.image.heat=(S.image.heat||0)+1}),
+   eventOption("直接进安检","什么都没发生，也什么都被解读了",()=>{risk(S,"fandom",4);add(S,"mental",-2)})]},
+ {id:"dev_2",title:"这部戏有一场吻戏",cond:()=>imageIs("devoted"),tags:{image:"devoted",stage:"mid"},body:"剧本原本就有。粉丝在超话里已经发起了投票，问你会不会用替身。",
+  opts:()=>[eventOption("照剧本拍","作品优先，粉圈风险+8",()=>{risk(S,"fandom",8);add(S,"fans",-4);S.persona.actor+=4;add(S,"publicFavor",3)}),
+   eventOption("和导演商量改成留白","花8万补拍，人设保住",()=>{add(S,"cash",-8);S.image.coherence=clamp(S.image.coherence+3);add(S,"fans",2)},S.cash<8),
+   eventOption("让粉丝投票决定","粉丝+6，但你把决定权交了出去",()=>{add(S,"fans",6);risk(S,"fandom",6);gameLog(S,"bad","你把一个专业决定交给了投票。从这次开始，很多事她们都觉得该问过自己。")})]},
+/* ── 元气偶像：快乐是职责 ── */
+ {id:"sun_1",title:"你今天笑不出来",cond:()=>imageIs("sunny"),tags:{image:"sunny"},body:"通告是一场见面会。化妆师问你要不要多打一点腮红，你说好。",
+  opts:()=>[eventOption("照常营业","粉丝+4，心理-6",()=>{add(S,"fans",4);add(S,"mental",-6);risk(S,"mental",5);S.image.coherence=clamp(S.image.coherence+2)}),
+   eventOption("上台说一句「今天状态一般」","路人缘+5，粉丝-2，心理+4",()=>{add(S,"publicFavor",5);add(S,"fans",-2);add(S,"mental",4)}),
+   eventOption("请团队改成线上","花7万违约，心理+8",()=>{add(S,"cash",-7);add(S,"mental",8);risk(S,"fandom",5)},S.cash<7)]},
+ {id:"sun_2",title:"一个后辈在节目里抢你的话",cond:()=>imageIs("sunny"),tags:{image:"sunny",stage:"late"},body:"三次。剪辑不会剪掉这段，弹幕已经在讨论你的表情管理。",
+  opts:()=>[eventOption("现场接住并抬他一手","路人缘+5，综艺感提升",()=>{add(S,"publicFavor",5);gainSkill(S,"variety",3);flushMastery();relation(S,"xu",3)}),
+   eventOption("录后找节目组沟通","花4万，剪辑往你这边倾斜",()=>{add(S,"cash",-4);add(S,"fame",3);relation(S,"xu",-2)},S.cash<4),
+   eventOption("什么都不做","路人缘-3，粉丝+3（心疼票）",()=>{add(S,"publicFavor",-3);add(S,"fans",3)})]},
+/* ── 高冷清冷：距离感是溢价，也是不能破的功 ── */
+ {id:"alo_1",title:"品牌方要你在直播里喊口号",cond:()=>imageIs("aloof"),tags:{image:"aloof"},body:"合同里写的是「配合宣传」。品牌方给的脚本里，有一句需要你连喊三遍。",
+  opts:()=>[eventOption("照做","现金+22万，人设违和",()=>{add(S,"cash",round(22*DIFF(S).cashMul,0));S.image.heat=(S.image.heat||0)+2;add(S,"commercial",3);add(S,"fans",-3)}),
+   eventOption("改成一段克制的口播","花5万重写脚本，双方都能接受",()=>{add(S,"cash",-5);add(S,"commercial",2);S.image.coherence=clamp(S.image.coherence+2)},S.cash<5),
+   eventOption("拒绝这一条","合约风险+6，品牌好感-4",()=>{risk(S,"contract",6);relation(S,"lin",-4);S.image.coherence=clamp(S.image.coherence+4)})]},
+ {id:"alo_2",title:"有人拍到你在路边摊吃面",cond:()=>imageIs("aloof"),tags:{image:"aloof",stage:"mid"},body:"照片很糊，你穿着拖鞋。三小时后它成了热搜第七，词条叫「原来他也吃这个」。",
+  opts:()=>[eventOption("顺势发一条日常","路人缘+6，人设契合度-5",()=>{add(S,"publicFavor",6);add(S,"fans",3);S.image.coherence=clamp(S.image.coherence-5)}),
+   eventOption("让团队压下去","花10万，人设保住",()=>{add(S,"cash",-10);S.image.coherence=clamp(S.image.coherence+3);risk(S,"privacy",-3)},S.cash<10),
+   eventOption("不回应","热度自己会散",()=>{add(S,"fame",2);add(S,"publicFavor",1)})]},
+/* ── 耿直沙雕：说真话的人，被要求一直说真话 ── */
+ {id:"can_1",title:"你说的一句实话被截了一半",cond:()=>imageIs("candid"),tags:{image:"candid"},body:"完整那句是有前提的。传出去的版本没有前提，读起来像在骂人。",
+  opts:()=>[eventOption("放出完整录像","路人缘+6，得罪剪辑方",()=>{add(S,"publicFavor",6);relation(S,"fang",-3);risk(S,"contract",3)}),
+   eventOption("发一条自嘲","粉丝+5，路人缘+2",()=>{add(S,"fans",5);add(S,"publicFavor",2);S.image.coherence=clamp(S.image.coherence+3)}),
+   eventOption("道歉了事","路人缘-4，人设契合度-6",()=>{add(S,"publicFavor",-4);S.image.coherence=clamp(S.image.coherence-6)})]},
+ {id:"can_2",title:"节目组请你去点评同行",cond:()=>imageIs("candid"),tags:{image:"candid",stage:"late"},body:"他们想要的是那种会被剪成单条的评价。台本上写着「保持您一贯的真诚」。",
+  opts:()=>[eventOption("按自己的判断说","知名度+6，同行好感下降",()=>{add(S,"fame",6);relation(S,"rival_main",-5);relation(S,"chen",-3);add(S,"publicFavor",3)}),
+   eventOption("只夸不评","不得罪人，人设契合度-4",()=>{S.image.coherence=clamp(S.image.coherence-4);add(S,"fans",-2)}),
+   eventOption("推掉这个环节","什么也没发生",()=>{add(S,"mental",2);relation(S,"xu",-2)})]},
+/* ── 话题体质：流量来得快，也会反过来吃掉你 ── */
+ {id:"buz_1",title:"营销号来问你要不要买一条",cond:()=>imageIs("buzzy"),tags:{image:"buzzy"},body:"对方说得很直白：黑的比红的便宜，效果还更好。你只需要不否认。",
+  opts:()=>[eventOption("买","花15万，知名度+10，路人缘-6",()=>{add(S,"cash",-15);add(S,"fame",10);add(S,"publicFavor",-6);risk(S,"privacy",6);S.track.gray++},S.cash<15),
+   eventOption("只买一条澄清位","花8万，路人缘+3",()=>{add(S,"cash",-8);add(S,"publicFavor",3)},S.cash<8),
+   eventOption("拉黑","什么都没发生，对方转头找了别人",()=>{add(S,"mental",2);S.image.coherence=clamp(S.image.coherence+3)})]},
+ {id:"buz_2",title:"你已经很久没有作品讨论了",cond:()=>imageIs("buzzy"),tags:{image:"buzzy",stage:"late"},body:"数据一直很好。你翻了翻自己的词条，前二十条全是穿搭、生图和某次同框。",
+  opts:()=>[eventOption("推掉三个月通告去拍戏","知名度-6，作品口碑+，心理+5",()=>{add(S,"fame",-6);S.persona.actor+=5;add(S,"mental",5);S.image.coherence=clamp(S.image.coherence-3)}),
+   eventOption("花钱做一轮作品向物料","花12万，路人缘+4",()=>{add(S,"cash",-12);add(S,"publicFavor",4)},S.cash<12),
+   eventOption("继续冲数据","粉丝+5，商业价值+3，路人缘-3",()=>{add(S,"fans",5);add(S,"commercial",3);add(S,"publicFavor",-3);risk(S,"fandom",4)})]},
+
+/* ── 个人工作室线 ── */
+ {id:"ind_1",title:"第一次自己发工资",cond:()=>S.independent,tags:{stage:"mid"},body:"银行 App 上一笔一笔转出去。你第一次知道，六个人一个月是这么多钱。",
+  opts:()=>[eventOption("按时足额发","团队忠诚上升，团队风险大降",()=>{S.team.forEach(m=>{m.loyalty=clamp(m.loyalty+6);m.fav=clamp(m.fav+4)});risk(S,"team",-10)}),
+   eventOption("和大家商量缓一个月","现金保住，团队风险+9",()=>{risk(S,"team",9);S.team.forEach(m=>m.loyalty=clamp(m.loyalty-5));add(S,"mental",-4)}),
+   eventOption("自掏腰包补上差额","花12万，团队忠诚大涨",()=>{add(S,"cash",-12);S.team.forEach(m=>m.loyalty=clamp(m.loyalty+10));risk(S,"team",-14)},S.cash<12)]},
+ {id:"ind_2",title:"平台把报价压了三成",cond:()=>S.independent,body:"理由是「没有公司背书，宣发要我们自己扛」。对方说这个价其实已经是照顾。",
+  opts:()=>[eventOption("接受","现金+18万，商业价值-2",()=>{add(S,"cash",round(18*DIFF(S).cashMul,0));add(S,"commercial",-2)}),
+   eventOption("带着数据去谈","考验社交",()=>{if(S.skills.social+rand(0,30)>=80){add(S,"cash",round(32*DIFF(S).cashMul,0));add(S,"commercial",3);relation(S,"han",3);gameLog(S,"good","你把三年的转化数据摆到了桌上。价格谈回来了。")}else{add(S,"commercial",-3);relation(S,"han",-2);gameLog(S,"bad","对方听完只说了一句：我们再看看。")}}),
+   eventOption("不接这个项目","空窗一个月，路人缘+2",()=>{add(S,"publicFavor",2);add(S,"fame",-3)})]},
+ {id:"ind_3",title:"有人来挖你的执行经纪",cond:()=>S.independent&&!!teamMember(S,"executive"),body:"开的价是你这边的一倍半。对方甚至没有避开你，直接把邀约发到了工作群里。",
+  opts:()=>[eventOption("加薪留人","花14万，忠诚大涨",()=>{add(S,"cash",-14);const m=teamMember(S,"executive");if(m){m.loyalty=clamp(m.loyalty+18);m.salary=round(m.salary+1.2,1);m.fav=clamp(m.fav+8)}},S.cash<14),
+   eventOption("坦白说现在给不起","团队风险+6，但对方留下的可能性看忠诚",()=>{const m=teamMember(S,"executive");if(m&&m.loyalty>=65){m.loyalty=clamp(m.loyalty+6);gameLog(S,"good","她说再干一年看看。")}else{risk(S,"team",10);gameLog(S,"bad","她没有立刻答复，但你知道答案了。")}}),
+   eventOption("放人","团队风险+12，路人缘+2",()=>{risk(S,"team",12);add(S,"publicFavor",2);S.track.fires++})]},
+ {id:"ind_4",title:"税务顾问建议做一次自查",cond:()=>S.independent,tags:{stage:"late"},body:"他说不是有问题，是流程上应该做。费用不低，做完什么也不会发生——这正是它的价值。",
+  opts:()=>[eventOption("做完整自查","花20万，税务风险大降",()=>{add(S,"cash",-20);risk(S,"tax",-22);gameLog(S,"good","自查报告归档。什么也没发生，这一次是好事。")},S.cash<20),
+   eventOption("只查最近一年","花7万，税务风险下降",()=>{add(S,"cash",-7);risk(S,"tax",-9)},S.cash<7),
+   eventOption("先不做","税务风险+4",()=>{risk(S,"tax",4)})]},
+ {id:"ind_5",title:"老东家发来一封函",cond:()=>S.independent,body:"措辞非常客气，附件里是三年前那份合约的第十四条。他们说只是提醒。",
+  opts:()=>[eventOption("请律师正式回函","花16万，合约风险大降",()=>{add(S,"cash",-16);risk(S,"contract",-18)},S.cash<16),
+   eventOption("私下约对方谈一次","考验社交",()=>{if(S.skills.social+rand(0,30)>=82){risk(S,"contract",-12);relation(S,"tang",4);gameLog(S,"good","一顿饭，一句「都不容易」，事情停在了这里。")}else{risk(S,"contract",8);gameLog(S,"bad","对方全程很客气，然后又发来了第二封。")}}),
+   eventOption("当作没收到","合约风险+10",()=>{risk(S,"contract",10);add(S,"mental",-3)})]},
+
+/* ── 高知名度期的烦恼 ── */
+ {id:"fam_1",title:"你已经三个月没有一个人走过街",cond:()=>S.fame>=80,tags:{stage:"late"},body:"助理说要不要试试戴口罩去趟超市。你算了一下，从车库到超市门口有一百二十米。",
+  opts:()=>[eventOption("去","心理+8，被拍到的概率上升",()=>{add(S,"mental",8);add(S,"health",3);risk(S,"privacy",8)}),
+   eventOption("让助理买回来","心理-3",()=>{add(S,"mental",-3)}),
+   eventOption("包一个时段的场地散步","花9万，心理+10",()=>{add(S,"cash",-9);add(S,"mental",10);add(S,"health",4)},S.cash<9)]},
+ {id:"fam_2",title:"一条十年前的旧帖被翻出来",cond:()=>S.fame>=80,body:"那时候你十七岁，说话不过脑子。现在它有四万条转发，每条都在等你解释。",
+  opts:()=>[eventOption("认真道歉并说明当时的自己","路人缘+4，粉丝-3",()=>{add(S,"publicFavor",4);add(S,"fans",-3);risk(S,"image",-6)}),
+   eventOption("让公关团队处理","花11万，风险下降",()=>{add(S,"cash",-11);risk(S,"image",-8);risk(S,"privacy",-4)},S.cash<11),
+   eventOption("不回应","人设风险+8，粉圈风险+5",()=>{risk(S,"image",8);risk(S,"fandom",5)})]},
+ {id:"fam_3",title:"有人冒充你的工作室收钱",cond:()=>S.fame>=80,body:"假的应援账号，假的合作报价单，连字体都仿得很像。已经有三个品牌被骗了。",
+  opts:()=>[eventOption("报警并公开声明","花8万，路人缘+5",()=>{add(S,"cash",-8);add(S,"publicFavor",5);risk(S,"contract",-4)},S.cash<8),
+   eventOption("只发一条澄清","路人缘+2",()=>{add(S,"publicFavor",2)}),
+   eventOption("让粉丝去处理","粉丝+3，粉圈风险+9",()=>{add(S,"fans",3);risk(S,"fandom",9);gameLog(S,"bad","粉丝确实把人扒了出来，顺手也扒错了两个无关的人。")})]},
+ {id:"fam_4",title:"家里人被拍了",cond:()=>S.fame>=80,tags:{stage:"late"},body:"照片里是你母亲在菜市场。配文写着「顶流的妈妈也要还价」。评论区在夸，也在放大她的脸。",
+  opts:()=>[eventOption("正式发函要求删除","花13万，私生活风险大降",()=>{add(S,"cash",-13);risk(S,"privacy",-16);add(S,"publicFavor",2)},S.cash<13),
+   eventOption("公开请大家放过家人","路人缘+6，心理-4",()=>{add(S,"publicFavor",6);add(S,"mental",-4);risk(S,"privacy",-6)}),
+   eventOption("什么也不做","私生活风险+10，心理-8",()=>{risk(S,"privacy",10);add(S,"mental",-8)})]},
+ {id:"fam_5",title:"你记不清上一次拒绝是什么时候",cond:()=>S.fame>=80,tags:{stage:"late"},body:"日程表排到了明年三月。经纪人问你春节要不要留三天。你想了一会儿，说看情况。",
+  opts:()=>[eventOption("留出十天，什么都不接","心理+12，知名度-5",()=>{add(S,"mental",12);add(S,"health",8);add(S,"fame",-5);risk(S,"health",-8);risk(S,"mental",-8)}),
+   eventOption("留三天","心理+5",()=>{add(S,"mental",5);add(S,"health",3)}),
+   eventOption("一天都不留","现金+25万，身心下滑",()=>{add(S,"cash",round(25*DIFF(S).cashMul,0));add(S,"health",-7);add(S,"mental",-7);risk(S,"health",7);S.persona.workaholic+=4})]},
+
+/* ── 公司专属 ── */
+ {id:"sg_new",title:"公司要你带一个新人",cond:()=>S.company==="shengguang"&&!S.independent,body:"唐峻的意思很明确：带出来算你的功劳，带不出来也算你的。新人的合约比你当年还紧。",
+  opts:()=>[eventOption("认真带","公司好感+8，心理-4",()=>{S.companyFavor=clamp(S.companyFavor+8);add(S,"mental",-4);relation(S,"tang",5);add(S,"publicFavor",2)}),
+   eventOption("挂个名","公司好感+3",()=>{S.companyFavor=clamp(S.companyFavor+3)}),
+   eventOption("提醒新人看清合约","公司好感-9，路人缘+4",()=>{S.companyFavor=clamp(S.companyFavor-9);add(S,"publicFavor",4);risk(S,"contract",6);gameLog(S,"good","你把自己踩过的坑指给了后面的人。")})]},
+ {id:"sg_sell",title:"公司把你的档期卖给了兄弟部门",cond:()=>S.company==="shengguang"&&!S.independent,tags:{stage:"mid"},body:"通知是在你看到通稿之后才到的。项目本身不差，只是没有人问过你。",
+  opts:()=>[eventOption("接受安排","公司好感+5，心理-5",()=>{S.companyFavor=clamp(S.companyFavor+5);add(S,"mental",-5);add(S,"fame",4)}),
+   eventOption("要求补一份说明和分成","考验社交",()=>{if(S.skills.social+rand(0,30)>=84){add(S,"cash",round(20*DIFF(S).cashMul,0));S.companyFavor=clamp(S.companyFavor+2);gameLog(S,"good","补充协议签了。至少这一次流程是对的。")}else{S.companyFavor=clamp(S.companyFavor-6);risk(S,"contract",6)}}),
+   eventOption("拒绝出席","公司好感-12，合约风险+9",()=>{S.companyFavor=clamp(S.companyFavor-12);risk(S,"contract",9);add(S,"mental",3)})]},
+ {id:"qm_pass",title:"叶青岚推掉了一个大平台",cond:()=>S.company==="qingmu"&&!S.independent,body:"对方开的价能覆盖公司半年支出。她在会上只说了一句：那个本子不行。散会后没有人再提。",
+  opts:()=>[eventOption("支持她的判断","公司好感+7，作品导向",()=>{S.companyFavor=clamp(S.companyFavor+7);relation(S,"ye",6);S.persona.actor+=3}),
+   eventOption("私下问她为什么","社交+，好感+4",()=>{relation(S,"ye",4);gainSkill(S,"social",2);flushMastery();add(S,"mental",2)}),
+   eventOption("表示可惜","公司好感-4，商业价值+2",()=>{S.companyFavor=clamp(S.companyFavor-4);add(S,"commercial",2)})]},
+ {id:"hz_books",title:"工作室的账目对不上",cond:()=>S.company==="huozhong"&&!S.independent,tags:{stage:"mid"},body:"差额不大，罗启明说是流程问题，回头补一下就行。他说这话的时候没有看你。",
+  opts:()=>[eventOption("要求请外部审计","花15万，税务风险大降，公司好感-6",()=>{add(S,"cash",-15);risk(S,"tax",-18);S.companyFavor=clamp(S.companyFavor-6);relation(S,"luo",-4)},S.cash<15),
+   eventOption("自己把相关部分理一遍","心理-4，税务风险下降",()=>{add(S,"mental",-4);risk(S,"tax",-8)}),
+   eventOption("相信他","税务和合约风险上升",()=>{risk(S,"tax",9);risk(S,"contract",5);relation(S,"luo",3)})]},
+
+/* ── 阶段向 ── */
+ {id:"ear_seen",title:"第一次有人在街上认出你",tags:{stage:"early"},cond:()=>S.fame>=25&&S.fame<70,body:"是个高中生，问你是不是那个剧里的。她不太确定，问完自己先脸红了。",
+  opts:()=>[eventOption("停下来合影","路人缘+4，粉丝+3",()=>{add(S,"publicFavor",4);add(S,"fans",3);add(S,"mental",4)}),
+   eventOption("笑着说不是","心理+2，什么也没留下",()=>{add(S,"mental",2)}),
+   eventOption("发一条微博记下来","知名度+3，粉丝+4",()=>{add(S,"fame",3);add(S,"fans",4);S.persona.idol+=2})]},
+ {id:"ear_quit",title:"同期的人退圈了",tags:{stage:"early"},cond:()=>S.month>=5,body:"发的是一条很短的告别，没有解释。你们上个月还在同一个试镜的走廊里等过。",
+  opts:()=>[eventOption("给他打个电话","心理-3，社交+",()=>{add(S,"mental",-3);gainSkill(S,"social",3);flushMastery();add(S,"publicFavor",1)}),
+   eventOption("在评论区留一句","路人缘+2",()=>{add(S,"publicFavor",2)}),
+   eventOption("把这件事记在心里","心理-2，之后更拼",()=>{add(S,"mental",-2);S.persona.workaholic+=3;add(S,"fame",2)})]},
+ {id:"lat_teacher",title:"有人开始叫你老师",tags:{stage:"late"},cond:()=>S.month>=22,body:"片场的年轻演员这样叫你的时候，你愣了一下。你没有比他大很多。",
+  opts:()=>[eventOption("认下来，也认真教","路人缘+4，表演+",()=>{add(S,"publicFavor",4);gainSkill(S,"acting",3);flushMastery();relation(S,"chen",4)}),
+   eventOption("让他们叫名字","粉丝+3，心理+3",()=>{add(S,"fans",3);add(S,"mental",3)}),
+   eventOption("第一次觉得自己老了","心理-4，之后更想证明什么",()=>{add(S,"mental",-4);S.persona.actor+=3})]},
+ {id:"lat_mirror",title:"一个新人拿着你三年前的作品来试镜",tags:{stage:"late"},cond:()=>S.month>=24&&S.track.projects>=4,body:"他说那部戏是他决定入行的原因。他演的那一段，正是你自己最不满意的一段。",
+  opts:()=>[eventOption("告诉他那段其实演砸了","路人缘+5，心理+4",()=>{add(S,"publicFavor",5);add(S,"mental",4);relation(S,"chen",3)}),
+   eventOption("推荐他进组","公司好感-3，路人缘+4",()=>{S.companyFavor=clamp(S.companyFavor-3);add(S,"publicFavor",4);relation(S,"zhou",3)}),
+   eventOption("什么也没说","心理+2",()=>{add(S,"mental",2)})]}
+);
+
+/* ══════════════ 二十、颁奖礼细分 ══════════════ */
+
+/* 主赛道由 persona 决定：让非演员 build 也有奖项通路，不再是「奖项＝影视」 */
+const AWARD_TRACKS={
+ film:{key:"film",name:"年度影视奖",noms:"最佳男女演员",eligible:s=>s.track.nominations-s.track.awards>0,
+  gate:s=>s.track.bestQuality>=76, /* v3 原有的硬门槛，细分后按赛道各自保留 */
+  winP:s=>clamp(.25+(s.track.bestQuality-70)/70+s.publicFavor/300,.2,.82),
+  win:"嘉宾念出了你的名字。你走上台的这段路，热搜替你记录了每一帧。",gain:{fame:9,publicFavor:7,commercial:7}},
+ music:{key:"music",name:"年度音乐奖",noms:"年度歌曲",eligible:s=>((s.track.music||0)+(s.track.stage||0))>=2&&s.track.bestQuality>=70,
+  gate:s=>s.track.bestQuality>=74&&((s.track.music||0)+(s.track.stage||0))>=3,
+  winP:s=>clamp(.2+(s.track.bestQuality-70)/70+((s.track.music||0)+(s.track.stage||0))*.05+s.fans/400,.18,.8),
+  win:"前奏响起来的时候你才反应过来，那是你自己的歌。",gain:{fame:8,publicFavor:5,fans:8}},
+ variety:{key:"variety",name:"年度综艺人气奖",noms:"年度综艺面孔",eligible:s=>s.track.variety>=2&&s.fans>=42,
+  gate:s=>s.fans>=58&&s.track.variety>=3,
+  winP:s=>clamp(.22+s.track.variety*.05+s.fans/320+s.publicFavor/380,.18,.8),
+  win:"这个奖是观众投的。念名字的时候，台下笑声比掌声先到。",gain:{fame:7,publicFavor:6,fans:9}}
+};
+function awardTrack(s){
+ const p=s.persona,rows=[["film",p.actor],["music",p.music],["variety",p.variety]].sort((a,b)=>b[1]-a[1]);
+ return AWARD_TRACKS[rows[0][1]>0?rows[0][0]:"film"];
+}
+
+const API={initialState,calculateForecast,generateProjects,auditionChance,settleCore,endingFor,playerScore,myRank,getState:()=>S,setState:s=>S=s,getProjectTemplateCount:()=>PROJECT_TEMPLATES.length,getTrendTemplateCount:()=>TREND_TEMPLATES.length,getEventCount:()=>EVENTS.length,getRiskWarningCount:()=>Object.keys(RISK_WARNINGS).length,getEvents:()=>EVENTS,getArcCount:()=>STORY_ARCS.length,extEnding,storyEvent,fandomSettle,fandomPower,DIFFICULTY,v4Init,migrateSave,gainSkill,trainGain,MASTERY,hasMastery,studioCost,studioLaunch,STUDIO_LEVELS,v5Init,SITE_EVENTS,siteEventTasks,siteEligible,refreshProjects,tagProject,contestChance,SITE_CHANCE,v6Init,FORESHADOWS,foreshadowSettle,foreshadowActive,foreshadowTask,foreshadowDisasterCut,cpSettle,cpEligible,cpExpireTask,cpEnd,cpPaparazziMul,CP_TERM,v7Init,relicCandidates,relicToLegacy,applyRelic,relicOffer,relicChoose,optionUnlocked,UNLOCKS,omens,OMEN_MONTH,BACKGROUNDS,COMPANIES,loadMeta,saveMeta,hallPush,v8Init,eventWeight,weightedEvent,stageOf,chooseEvent,AWARD_TRACKS,awardTrack,annualReview,markEventSeen};
 if(typeof window!=="undefined")window.StarGame=API;else globalThis.StarGame=API;
-Object.assign(globalThis,{ACTIONS,chooseGender,chooseBackground,chooseCompany,startCareer,showCareerCreator,switchTab,acceptProject,refuseProject,negotiateProject,auditionProject,setTeamFilter,setRelationFilter,chooseTeamAssignment,moveTeamToStandby,dismissTeam,interactNpc,pursueRomance,romanceMenu,handleTrend,requestBreakContract,restartGame,toggleTalent,rerollTalents});
+Object.assign(globalThis,{ACTIONS,chooseGender,chooseBackground,chooseCompany,startCareer,showCareerCreator,switchTab,acceptProject,refuseProject,negotiateProject,auditionProject,setTeamFilter,setRelationFilter,chooseTeamAssignment,moveTeamToStandby,dismissTeam,interactNpc,pursueRomance,romanceMenu,handleTrend,requestBreakContract,restartGame,toggleTalent,rerollTalents,studioUpgrade,studioLaunchMenu,chooseMastery,contestProject,contestRoll,projectFlags,cpPropose,cpMenu,relicChoose,renderRelicBox});
 if(typeof document!=="undefined")init();
 </script>
 </body>
