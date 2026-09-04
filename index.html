@@ -4,6 +4,7 @@
 <!-- v4批次3 2026-08-31 风险伏笔两段式+CP营业 SAVE_VERSION=6 -->
 <!-- v4批次4 2026-08-31 星路遗产+新开局解锁+星途预感 SAVE_VERSION=7 -->
 <!-- v4批次5 2026-08-31 事件池扩容30条+标签加权+颁奖礼细分 SAVE_VERSION=8 -->
+<!-- v5批次K 2026-09-04 选择反馈：弹窗选项与全部直接操作按钮前后快照自动对比，摊开数值变化并捞出作者写的那句叙述（此前355个选项里91%点完静默） -->
 <!-- v5批次J 2026-09-04 颁奖季运作：评审奖跑评委（灰色记录+曝光风险）／观众票奖组织打投（代价记在粉圈）／华表不接受运作；2条成就 SAVE_VERSION=13 -->
 <!-- v5批次I 2026-09-04 五条专属恋爱线（同期/人气艺人/陈嘉树/温宁/秦燃各3条，共15条45个选项），结构性事件优先级修正 -->
 <!-- v5批次H 2026-09-04 恋爱线：4个阶段+信任度+10条恋爱事件+3条独身事件，性取向在公开时真正生效；6个恋爱结局；7条恋爱成就 SAVE_VERSION=12 -->
@@ -178,6 +179,22 @@ html,body{overflow-x:hidden}                 /* 震动动画不再撑出横向�
 .relic-done small{display:block;font-size:9px;color:var(--muted);margin-top:2px}
 /* 星途预感：标题沿用 .card h3 的14px，不单独缩小 */
 .omen-card{border-color:#67562f}
+
+/* ===== v5 批次K 样式 ===== */
+.modal-body .dchips.modal-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.modal-body .dchips.modal-chips span{font-size:10.5px;line-height:1.5;border:1px solid var(--line);border-radius:3px;padding:1px 6px;background:rgba(0,0,0,.28);white-space:nowrap;color:var(--muted)}
+.modal-body .dchips.modal-chips span.up{color:#91d6ac;border-color:#386049}
+.modal-body .dchips.modal-chips span.down{color:#ff9d93;border-color:#6f3c39}
+.toast.delta{border-left-color:var(--gold);padding:8px 11px;pointer-events:auto;cursor:pointer;width:100%}
+.toast.delta .dlog{font-size:11.5px;color:#e3ded7;line-height:1.6}
+.toast.delta .dlog b{display:block;font-weight:400}
+.toast.delta .dlog b+b{margin-top:3px}
+.toast.delta .dchips{display:flex;flex-wrap:wrap;gap:4px}
+.toast.delta .dlog+.dchips{margin-top:6px}
+.toast.delta .dchips span{font-size:10.5px;line-height:1.5;border:1px solid var(--line);border-radius:3px;padding:1px 6px;background:rgba(0,0,0,.28);white-space:nowrap;color:var(--muted)}
+.toast.delta .dchips span.up{color:#91d6ac;border-color:#386049}
+.toast.delta .dchips span.down{color:#ff9d93;border-color:#6f3c39}
+@media(max-width:360px){.toast.delta .dchips span{font-size:10px}}
 
 /* ===== v5 批次H 样式 ===== */
 .card.romance{border-color:#6b4a58;background:linear-gradient(180deg,rgba(107,74,88,.12),transparent)}
@@ -557,7 +574,7 @@ function fandomIncident(){const st=fandomState(S);if(st!=="失控"||Math.random(
 舆论在等你的态度。`,[
 eventOption("公开管教粉丝","粉丝-6 · 粉圈风险大降、路人缘+3",()=>{add(S,"fans",-6);risk(S,"fandom",-18);add(S,"publicFavor",3);gameLog(S,"good","你公开喊话粉丝理智追星。掉了一批粉，但圈子安静了。")}),
 eventOption("冷处理","路人缘-4，粉圈风险继续累积",()=>{add(S,"publicFavor",-4);risk(S,"fandom",5);if(inc[2]==="privacy")risk(S,"privacy",6);if(inc[2]==="commercial")add(S,"commercial",-3);gameLog(S,"bad",`${inc[0]}：你没有表态，账单记在了路人缘上。`)})])}
-function showModal(title,body,options){if(typeof document==="undefined")return;$("#modalTitle").textContent=title;$("#modalBody").textContent=body;applyModalArt(title,body);const box=$("#modalOptions");box.innerHTML="";options.forEach(o=>{const b=document.createElement("button");b.innerHTML=`${o.text}${o.sub?`<small>${o.sub}</small>`:""}`;b.disabled=!!o.disabled;b.onclick=()=>{$("#mask").classList.remove("show");if(o.fn)o.fn();if(!$("#mask").classList.contains("show"))flushQueue()};box.appendChild(b)});$("#mask").classList.add("show")}
+function showModal(title,body,options){if(typeof document==="undefined")return;$("#modalTitle").textContent=title;$("#modalBody").textContent=body;applyModalArt(title,body);const box=$("#modalOptions");box.innerHTML="";options.forEach(o=>{const b=document.createElement("button");b.innerHTML=`${o.text}${o.sub?`<small>${o.sub}</small>`:""}`;b.disabled=!!o.disabled;b.onclick=()=>{$("#mask").classList.remove("show");const __snap=snapState(S);if(o.fn)o.fn();showChanges(__snap);if(!$("#mask").classList.contains("show"))flushQueue()};box.appendChild(b)});$("#mask").classList.add("show")}
 function flushQueue(){if(modalQueue.length)modalQueue.shift()();else renderAll()}
 function queueAll(rows){modalQueue.push(...rows);flushQueue()}
 function needEnergy(){if(S.energy>0)return true;showModal("本月已经排满","这个月的行动力用完了。项目、团队、榜单还能看，别的等下个月。",[{text:"知道了"}]);return false}
@@ -3543,7 +3560,120 @@ ACHIEVEMENTS.push(
  {id:"aw_nopr", name:"一分钱没花",desc:"拿满3座奖，一次公关也没跑",cond:s=>s.track.awards>=3&&!s.awardPRUsed}
 );
 
-const API={initialState,calculateForecast,generateProjects,auditionChance,settleCore,endingFor,playerScore,myRank,getState:()=>S,setState:s=>S=s,getProjectTemplateCount:()=>PROJECT_TEMPLATES.length,getTrendTemplateCount:()=>TREND_TEMPLATES.length,getEventCount:()=>EVENTS.length,getRiskWarningCount:()=>Object.keys(RISK_WARNINGS).length,getEvents:()=>EVENTS,getArcCount:()=>STORY_ARCS.length,extEnding,storyEvent,fandomSettle,fandomPower,DIFFICULTY,v4Init,migrateSave,gainSkill,trainGain,MASTERY,hasMastery,studioCost,studioLaunch,STUDIO_LEVELS,v5Init,SITE_EVENTS,siteEventTasks,siteEligible,refreshProjects,tagProject,contestChance,SITE_CHANCE,v6Init,FORESHADOWS,foreshadowSettle,foreshadowActive,foreshadowTask,foreshadowDisasterCut,cpSettle,cpEligible,cpExpireTask,cpEnd,cpPaparazziMul,CP_TERM,v7Init,relicCandidates,relicToLegacy,applyRelic,relicOffer,relicChoose,optionUnlocked,UNLOCKS,omens,OMEN_MONTH,BACKGROUNDS,COMPANIES,loadMeta,saveMeta,hallPush,v8Init,eventWeight,weightedEvent,stageOf,chooseEvent,markEventSeen,v13Init,awardPRKind,awardPRBonus,awardPRGet,awardPRKey,AWARD_PR_KIND,LOVE_ARC_EVENTS,loveArcKey,loveArcDone,v12Init,loveSettle,loveEvent,loveEnding,lovePartner,loveOn,LOVE_EVENTS,SOLO_EVENTS,v11Init,AWARDS,AWARD_MAP,awardTasks,awardShow,awardEligible,awardMiss,awardPrestige,awardWon,awardNomTotal,awardEnding,v10Init,ERAS,ERA,rollEra,PROJECT_TAGS,rollProjectTag,NPC_SEASON,npcSeason,npcGate,v9Init,investSettle,escrowSettle,escrowOff,studioCD,studioPRDesk,fanStateApply,trendRead,rivalNewsTick,investOf,NPC_VOICE,npcMood,npcVoice,moodDelta,npcLine,pivotEligible,pivotChoices,doPivot,flagSettle,projectSlots,setBlacklist,actionCost};
+/* ══════════════════════════════════════════════════════════════════
+   《模拟明星》v5 · 批次K
+   选择反馈：每一次选完，把「发生了什么」当场摊开
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 之前 355 个选项里只有 31 个（9%）写了 gameLog，而日志在另一个页签；
+   其余 91% 点完就静默关窗，玩家不知道自己刚才换来了什么。
+   这里不逐条改选项，而是在「点击」这个必经之路上做前后快照自动对比：
+   数值变化自动列出来，作者已经写好的那句叙述（gameLog）也一并捞上来。 */
+
+const DELTA_BASE={cash:"现金",fame:"知名度",publicFavor:"路人缘",commercial:"商业价值",
+ fans:"粉丝",health:"健康",mental:"心理",companyFavor:"公司关系"};
+
+function snapState(s){
+ if(!s)return null;
+ const o={ref:s,base:{},risks:{},skills:{},npc:{}};
+ Object.keys(DELTA_BASE).forEach(k=>o.base[k]=s[k]||0);
+ Object.keys(s.risks||{}).forEach(k=>o.risks[k]=s.risks[k]||0);
+ Object.keys(s.skills||{}).forEach(k=>o.skills[k]=s.skills[k]||0);
+ (s.npcs||[]).forEach(n=>o.npc[n.id]=n.fav);
+ const im=s.image||{},f=s.fandom||{},L=s.love||{},t=s.track||{};
+ o.coh=im.coherence||0;o.bel=im.believers||0;o.trust=L.trust||0;
+ o.gray=t.gray||0;o.awards=t.awards||0;o.noms=t.nominations||0;
+ o.fan={data:f.data||0,anti:f.anti||0,cohesion:f.cohesion||0,funds:f.funds||0};
+ o.escrow=(s.escrow&&s.escrow.amount)||0;
+ o.logN=(s.log||[]).length;
+ return o;
+}
+function diffState(a){
+ const s=S,R=[];
+ const push=(t,raw,unit,inverse)=>{
+  if(!raw)return;
+  const n=unit==="万"?Math.round(raw*10)/10:Math.round(raw);
+  if(!n)return;
+  R.push({t,n,unit:unit||"",good:inverse?n<0:n>0});
+ };
+ Object.keys(a.base).forEach(k=>push(DELTA_BASE[k],(s[k]||0)-a.base[k],k==="cash"?"万":""));
+ Object.keys(a.skills).forEach(k=>push(SKILLS[k],(s.skills[k]||0)-a.skills[k]));
+ push("人设契合",(((s.image||{}).coherence)||0)-a.coh);
+ push("信仰粉",(((s.image||{}).believers)||0)-a.bel);
+ push("信任",(((s.love||{}).trust)||0)-a.trust);
+ /* 风险与黑粉：涨是坏事 */
+ Object.keys(a.risks).forEach(k=>push(RISK_NAMES[k]+"隐患",(s.risks[k]||0)-a.risks[k],"",true));
+ const f=s.fandom||{};
+ push("数据组",(f.data||0)-a.fan.data);
+ push("凝聚力",(f.cohesion||0)-a.fan.cohesion);
+ push("黑粉热度",(f.anti||0)-a.fan.anti,"",true);
+ push("集资池",(f.funds||0)-a.fan.funds,"万");
+ push("预备金",((s.escrow&&s.escrow.amount)||0)-a.escrow,"万");
+ push("灰色记录",((s.track||{}).gray||0)-a.gray,"",true);
+ push("提名",((s.track||{}).nominations||0)-a.noms);
+ push("奖项",((s.track||{}).awards||0)-a.awards);
+ /* 人物好感 */
+ Object.keys(a.npc).forEach(id=>{
+  const n=(s.npcs||[]).find(x=>x.id===id);
+  if(n)push(n.name,n.fav-a.npc[id]);
+ });
+ return R;
+}
+/* 作者已经写好的那句叙述，捞出来放在数值上面 */
+function newLogLines(a){
+ const log=(S&&S.log)||[];
+ const k=log.length-a.logN;
+ if(k<=0)return[];
+ return log.slice(0,Math.min(k,3)).reverse().map(x=>String(x.text).replace(/^第\d+月\s*·\s*/,""));
+}
+function showChanges(snap){
+ if(!snap||!S||snap.ref!==S)return;
+ if(typeof document==="undefined")return;
+ let rows=[],logs=[];
+ try{rows=diffState(snap);logs=newLogLines(snap)}catch(e){return}
+ if(!rows.length&&!logs.length)return;
+ /* 如果这次操作紧接着又弹了一个窗，就把变化贴进那个弹窗正文下面。
+    浮层压在弹窗上会挡住按钮，而弹窗自己的正文已经把话说了。 */
+ const mask=document.getElementById("mask");
+ if(mask&&mask.classList&&mask.classList.contains("show")){
+  const mb=document.getElementById("modalBody");
+  if(mb&&rows.length&&!mb.querySelector(".modal-chips")){
+   const c=document.createElement("div");c.className="dchips modal-chips";
+   c.innerHTML=rows.slice(0,12).map(r=>`<span class="${r.good?"up":"down"}">${esc(r.t)} ${r.n>0?"+":""}${r.n}${r.unit}</span>`).join("");
+   mb.appendChild(c);
+  }
+  return;
+ }
+ const box=document.getElementById("toastBox");if(!box||!box.appendChild)return;
+ /* 同一次操作只出一条，避免包装函数与弹窗选项重复触发 */
+ const stamp=logs.join("|")+"#"+rows.map(r=>r.t+r.n).join(",");
+ if(box.dataset&&box.dataset.last===stamp&&Date.now()-(+box.dataset.lastAt||0)<900)return;
+ if(box.dataset){box.dataset.last=stamp;box.dataset.lastAt=Date.now()}
+ const d=document.createElement("div");
+ d.className="toast delta";
+ d.innerHTML=(logs.length?`<div class="dlog">${logs.map(x=>`<b>${esc(x)}</b>`).join("")}</div>`:"")
+  +(rows.length?`<div class="dchips">${rows.slice(0,12).map(r=>
+    `<span class="${r.good?"up":"down"}">${esc(r.t)} ${r.n>0?"+":""}${r.n}${r.unit}</span>`).join("")}</div>`:"");
+ d.onclick=()=>{try{d.remove()}catch(e){}};
+ box.appendChild(d);
+ setTimeout(()=>{d.classList.add("out")},4200);
+ setTimeout(()=>{try{d.remove()}catch(e){}},4700);
+}
+/* 玩家直接点的那些按钮都挂在 globalThis 上（内联 onclick 走的就是这条路），统一包一层 */
+function wrapForChanges(names){
+ names.forEach(k=>{
+  const orig=globalThis[k];
+  if(typeof orig!=="function"||orig.__chg)return;
+  const w=function(){const snap=snapState(S);const r=orig.apply(this,arguments);showChanges(snap);return r};
+  w.__chg=1;globalThis[k]=w;
+ });
+}
+wrapForChanges(["fanAct","handleTrend","verifyTrend","interactNpc","acceptProject","refuseProject",
+ "negotiateProject","auditionProject","contestRoll","chooseTeamAssignment","moveTeamToStandby",
+ "dismissTeam","studioUpgrade","studioLaunch","chooseMastery","doPivot","loveMeet","loveGift",
+ "loveGoPublic","loveMeetFamily","lovePropose","loveBreak","establishImage"]);
+
+const API={initialState,calculateForecast,generateProjects,auditionChance,settleCore,endingFor,playerScore,myRank,getState:()=>S,setState:s=>S=s,getProjectTemplateCount:()=>PROJECT_TEMPLATES.length,getTrendTemplateCount:()=>TREND_TEMPLATES.length,getEventCount:()=>EVENTS.length,getRiskWarningCount:()=>Object.keys(RISK_WARNINGS).length,getEvents:()=>EVENTS,getArcCount:()=>STORY_ARCS.length,extEnding,storyEvent,fandomSettle,fandomPower,DIFFICULTY,v4Init,migrateSave,gainSkill,trainGain,MASTERY,hasMastery,studioCost,studioLaunch,STUDIO_LEVELS,v5Init,SITE_EVENTS,siteEventTasks,siteEligible,refreshProjects,tagProject,contestChance,SITE_CHANCE,v6Init,FORESHADOWS,foreshadowSettle,foreshadowActive,foreshadowTask,foreshadowDisasterCut,cpSettle,cpEligible,cpExpireTask,cpEnd,cpPaparazziMul,CP_TERM,v7Init,relicCandidates,relicToLegacy,applyRelic,relicOffer,relicChoose,optionUnlocked,UNLOCKS,omens,OMEN_MONTH,BACKGROUNDS,COMPANIES,loadMeta,saveMeta,hallPush,v8Init,eventWeight,weightedEvent,stageOf,chooseEvent,markEventSeen,snapState,diffState,showChanges,newLogLines,v13Init,awardPRKind,awardPRBonus,awardPRGet,awardPRKey,AWARD_PR_KIND,LOVE_ARC_EVENTS,loveArcKey,loveArcDone,v12Init,loveSettle,loveEvent,loveEnding,lovePartner,loveOn,LOVE_EVENTS,SOLO_EVENTS,v11Init,AWARDS,AWARD_MAP,awardTasks,awardShow,awardEligible,awardMiss,awardPrestige,awardWon,awardNomTotal,awardEnding,v10Init,ERAS,ERA,rollEra,PROJECT_TAGS,rollProjectTag,NPC_SEASON,npcSeason,npcGate,v9Init,investSettle,escrowSettle,escrowOff,studioCD,studioPRDesk,fanStateApply,trendRead,rivalNewsTick,investOf,NPC_VOICE,npcMood,npcVoice,moodDelta,npcLine,pivotEligible,pivotChoices,doPivot,flagSettle,projectSlots,setBlacklist,actionCost};
 if(typeof window!=="undefined")window.StarGame=API;else globalThis.StarGame=API;
 Object.assign(globalThis,{ACTIONS,chooseGender,chooseBackground,chooseCompany,startCareer,showCareerCreator,switchTab,acceptProject,refuseProject,negotiateProject,auditionProject,setTeamFilter,setRelationFilter,chooseTeamAssignment,moveTeamToStandby,dismissTeam,interactNpc,pursueRomance,romanceMenu,handleTrend,requestBreakContract,restartGame,toggleTalent,rerollTalents,studioUpgrade,studioLaunchMenu,chooseMastery,contestProject,contestRoll,projectFlags,cpPropose,cpMenu,relicChoose,renderRelicBox,pivotMenu,doPivot,investMenu,escrowMenu,verifyTrend,awardPRMenu,romanceMenu,loveMeet,loveGift,loveGoPublic,loveMeetFamily,lovePropose,loveBreak});
 if(typeof document!=="undefined")init();
