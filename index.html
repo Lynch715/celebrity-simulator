@@ -7,6 +7,7 @@
 <!-- v5批次M 2026-09-05 移动端版式：弹窗与飘条补底部安全区、vh→dvh、结局出场清飘条、擂台按钮补到32px、行动卡角标10px -->
 <!-- v5批次L 2026-09-05 艺名：32姓×32名的艺名生成器，进创建页自动取名、可「换一个」、切性别自动跟随；删掉「无名男艺人」兜底 -->
 <!-- v5批次K 2026-09-04 选择反馈：弹窗选项与全部直接操作按钮前后快照自动对比，摊开数值变化并捞出作者写的那句叙述（此前355个选项里91%点完静默） -->
+<!-- v6批次Q 2026-10-03 审计修复：结局先判事业后判恋爱、年度考核换成排名/项目/近作三项、商业价值递减、开局对手+16、奖项计分4→3、浮层挪到顶部、风险条压成一行、奖项缺项提示与旧档作品记录、单飞走解约流程 SAVE_VERSION=14 -->
 <!-- v6批次P 2026-10-02 生涯加长：60个月五个阶段、年度考核（连续两年不合格提前结束）、第3年宿敌换公司、第4年起新人冲击、第5年合约到期谈判、12条后两年事件 SAVE_VERSION=14 -->
 <!-- v6批次O 2026-10-02 难度曲线：对手追赶+rivalMul生效、知名度边际递减与高位回落、排场开销、整改费随身价涨、奖项看近12个月作品、红了隐患自然上涨、结局门槛上调 SAVE_VERSION=13 -->
 <!-- v6批次N 2026-10-02 角色档案：顶栏拆健康/心理、档案页签（主数值/技能/八类风险/分差/其他）、风险速览条、项目卡标明「你的技能」与成功率 SAVE_VERSION=13 -->
@@ -370,6 +371,22 @@ html,body{overflow-x:hidden}                 /* 震动动画不再撑出横向�
 .goal-row i{font-style:normal;font-size:11px;text-align:right;color:#ff9d93}
 .goal-row.ok i{color:#7fd39a}
 .copy.down{color:#ff9d93}
+
+/* ===== v6 批次Q 样式：风险条一行、浮层挪顶部 ===== */
+.risk-strip{display:flex;align-items:center;gap:6px;padding:5px 6px}
+.rs-main{flex:1;min-width:0;display:flex;align-items:center;gap:5px;background:transparent;border:0;padding:0;min-height:32px;text-align:left;overflow:hidden}
+.rs-main:hover{color:inherit}
+.rs-label{font-size:10px;color:var(--muted);flex:none}
+.rs-chip{display:inline-flex;align-items:center;gap:2px;font-size:11px;white-space:nowrap;border:1px solid var(--line);border-radius:4px;padding:3px 5px;color:var(--muted);flex:none}
+.rs-chip svg{width:11px;height:11px}
+.rs-chip b{margin-left:3px;font-size:12px;color:var(--text)}
+.rs-chip.amber{border-color:#7a5a24}.rs-chip.amber b{color:#e6b45a}
+.rs-chip.red{border-color:#8a3a33;background:rgba(214,86,74,.12)}.rs-chip.red b{color:#ff8a7c}
+.rs-chip.warm b{color:#c8c86a}
+.rs-fix{flex:none;min-height:32px;padding:4px 11px;font-size:11px}
+@media(max-width:370px){.rs-label{display:none}.rs-chip{padding:3px 4px;font-size:10.5px}.rs-chip svg{display:none}}
+#toastBox{top:max(44px,calc(env(safe-area-inset-top,0px) + 44px));bottom:auto!important}
+#toastBox .toast,#toastBox .toast.delta{pointer-events:none}
 </style>
 </head>
 <body>
@@ -557,7 +574,7 @@ const STAT_DEFS=[
 let S=null,modalQueue=[],draft={gender:"male",difficulty:"normal",background:"academy",company:"shengguang",talents:[],talentPool:null,talentRerolls:1};
 function eventOption(text,sub,fn,disabled=false){return{text,sub,fn,disabled}}
 function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function add(s,key,v){if(key==="fame"&&v>0)v*=fameDamp(s);s[key]=clamp((s[key]||0)+v,key==="cash"?-999:0,key==="cash"?9999:100)}
+function add(s,key,v){if(key==="fame"&&v>0)v*=fameDamp(s);else if(key==="commercial"&&v>0)v*=commDamp(s);s[key]=clamp((s[key]||0)+v,key==="cash"?-999:0,key==="cash"?9999:100)}
 function risk(s,key,v){if(v>0)v*=DIFF(s).riskMul*ERA(s).riskMul;s.risks[key]=clamp((s.risks[key]||0)+v,0,120)}
 function relation(s,id,v){const n=s.npcs.find(x=>x.id===id);if(n)n.fav=clamp(n.fav+v)}
 function gameLog(s,cls,text){s.log.unshift({cls,text:`第${s.month}月 · ${text}`});s.log=s.log.slice(0,120)}
@@ -571,7 +588,7 @@ function monthLoad(s,month){return activeInMonth(s,month).reduce((a,p)=>a+p.load
 function currentLoad(s){return monthLoad(s,s.month)}
 function bossId(s){return COMPANIES[s.company]?.boss}
 function playerShare(s){return currentCompany(s).share}
-function playerScore(s){return round(s.fame*.32+s.publicFavor*.19+s.commercial*.17+s.track.bestQuality*.18+s.track.awards*4+s.fans*.1,1)}
+function playerScore(s){return round(s.fame*.32+s.publicFavor*.19+s.commercial*.17+s.track.bestQuality*.18+s.track.awards*3+s.fans*.1,1)}
 function myRank(s){return 1+s.competitors.filter(x=>x.score>playerScore(s)).length}
 function personaTags(s){const p=s.persona,rows=[["实力派",p.actor],["综艺咖",p.variety],["流量偶像",p.idol],["音乐人",p.music],["时尚宠儿",p.fashion],["商业明星",p.business],["劳模",p.workaholic],["公益面孔",p.public]];return rows.filter(x=>x[1]>=8).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0])}
 function initialTeam(company){const managerNames={shengguang:"马秀琴",qingmu:"赵启平",huozhong:"安欣然",yuanhang:"高霜"},assistantNames={shengguang:"小余",qingmu:"孙璨",huozhong:"章佳",yuanhang:"许安"};return[
@@ -839,15 +856,16 @@ function chooseEvent(){
  if(!rows.length)return null;
  const e=weightedEvent(S,rows);S.lastEvent=e.id;S.usedEvents.push(e.id);markEventSeen(e.id);return e}
 function riskWarning(){const rows=Object.keys(S.risks).filter(k=>S.risks[k]>=64&&(S.warningMonth[k]||0)<S.month-1);if(!rows.length)return null;rows.sort((a,b)=>S.risks[b]-S.risks[a]);return Math.random()<.76?rows[0]:pick(rows)}
-function disasterCheck(){const candidates=Object.keys(S.risks).filter(k=>S.risks[k]>=94&&S.warnings[k]>=2);if(!candidates.length)return null;const k=candidates.sort((a,b)=>S.risks[b]-S.risks[a])[0];if(S.risks[k]<108&&Math.random()>foreshadowDisasterCut(S,k))return null;const endings={contract:["全面雪藏","公司和平台交叉核对合同后，同时启动了违约追责。待播项目暂停，工作室账户被保全，你的名字从新项目名单中消失。"],tax:["税务风暴","通报公布那天下午，六个品牌同时下架了你的物料。补税和罚款是第一步。后面还有。"],health:["片场倒下","连轴转的第十七天，你在镜头前失去意识。医生要求至少停工一年，所有合同进入重新谈判。"],mental:["退出镜头","你没有出现在当天的直播里。第二天上午十点，工作室发了公告：无限期暂停演艺工作。"],privacy:["私生活彻底曝光","聊天记录、行程、私人视频，打包发在同一个链接里。有真的，有剪过的，也有假的。分不分得清已经不重要了。"],team:["团队集体出走","经纪人、宣传和助理先后辞职，随后一份记录工作室混乱管理的长文登上热搜。所有项目失去对接人。"],fandom:["粉圈失控","一场线下冲突造成人员受伤。舆论将长期纵容、集资和攻击他人的责任全部追溯到你和工作室。"],image:["人设崩塌","你维持了三年的那个样子，最后一次也没能拼回来。粉丝把你说过的话逐条翻出来，一条一条对着你做过的事。信过的人骂得最凶。"]};return endings[k]}
+function disasterCheck(){const candidates=Object.keys(S.risks).filter(k=>S.risks[k]>=94&&S.warnings[k]>=2);if(!candidates.length)return null;const k=candidates.sort((a,b)=>S.risks[b]-S.risks[a])[0];if(S.risks[k]<108&&Math.random()>foreshadowDisasterCut(S,k))return null;const endings={contract:["全面雪藏","公司和平台交叉核对合同后，同时启动了违约追责。待播项目暂停，工作室账户被保全，你的名字从新项目名单中消失。"],tax:["税务风暴","通报公布那天下午，六个品牌同时下架了你的物料。补税和罚款是第一步。后面还有。"],health:["片场倒下","连轴转的第十七天，你在镜头前失去意识。医生要求至少停工一年，所有合同进入重新谈判。"],mental:["退出镜头","你没有出现在当天的直播里。第二天上午十点，工作室发了公告：无限期暂停演艺工作。"],privacy:["私生活彻底曝光","聊天记录、行程、私人视频，打包发在同一个链接里。有真的，有剪过的，也有假的。分不分得清已经不重要了。"],team:["团队集体出走","经纪人、宣传和助理先后辞职，随后一份记录工作室混乱管理的长文登上热搜。所有项目失去对接人。"],fandom:["粉圈失控","一场线下冲突造成人员受伤。舆论将长期纵容、集资和攻击他人的责任全部追溯到你和工作室。"],image:["人设崩塌","你维持了这么久的那个样子，最后一次也没能拼回来。粉丝把你说过的话逐条翻出来，一条一条对着你做过的事。信过的人骂得最凶。"]};return endings[k]}
 function showReport(r){$("#modalTitle").textContent=`第${S.month}月 · 收入与状态`;applyModalArt("","");const body=$("#modalBody");body.innerHTML="";[["项目到手收入",`+${r.income}万`],["团队工资",`-${r.payroll}万`],["个人税费",`-${r.tax}万`],["生活与基础支出","-3万"],...(r.over?[["超负荷临时成本",`-${r.over}万`]]:[])].forEach(([k,v])=>{const d=document.createElement("div");d.className="report-line";d.innerHTML=`<span>${k}</span><span class="${v[0]==="+"?"up":"down"}">${v}</span>`;body.appendChild(d)});const sum=document.createElement("div");sum.className="report-line";sum.innerHTML=`<span><b>档期负荷 ${Math.round(r.load*100)}% · 完成项目 ${r.completed.length}</b></span><span class="${r.net>=0?"up":"down"}">${r.net>=0?"+":""}${r.net}万</span>`;body.appendChild(sum);const box=$("#modalOptions");box.innerHTML='<button>下一步</button>';box.firstChild.onclick=()=>{$("#mask").classList.remove("show");flushQueue()};$("#mask").classList.add("show")}
 function showCompletion(c){const opts=[{text:"看观众反应"}];if(c.cpOffer)opts.unshift(eventOption("顺水推舟营业CP","知名度+7、粉丝+8、商业+4；隐私与粉圈风险上升"+(S.romanceId?"（你有恋情在身，风险更高）":""),()=>{add(S,"fame",7);add(S,"fans",8);add(S,"commercial",4);risk(S,"privacy",S.romanceId?14:8);risk(S,"fandom",6);gameLog(S,"good",`${c.title}的CP营业安排上了：剪辑、直拍、互动样样齐全，糖发得又多又准。`)}),eventOption("礼貌撇清","路人缘+2，CP粉-3",()=>{add(S,"publicFavor",2);add(S,"fans",-3);gameLog(S,"",`${c.title}播出后你与对家保持距离，CP粉意难平。`)}));showModal(`${PROJECT_TYPES[c.type].name}完成 · ${c.tier}`,`${c.title}
 
 内部成片评估：${c.quality}分。${c.topBilling?"（一番待遇：作品收益放大）":""}${c.cpOffer?`\n\n播出后你和对手戏演员的互动被疯狂二创，站方问要不要顺势营业CP。`:""}`,opts)}
 
 function nextMonth(){S.month++;S.energy=4;S.projects=refreshProjects(S);S.candidates=makeTeamCandidates(S);S.trends=generateTrends(S);gameLog(S,"month",`—— 第${S.month}月 · 新项目和新热搜已刷新 ——`);S.trends.slice(0,2).forEach(t=>tickerPush("#"+esc(t.title)+"#",t.kind==="bad"?"red":""));toast(`第${S.month}月 · 行动力已恢复`);flushQueue()}
-function endingFor(s){const rank=myRank(s),rival=s.npcs.find(n=>n.id==="rival_main"),main=s.competitors.find(c=>c.main),clean=s.track.gray===0,condition=(s.health+s.mental)/2;if(s.image.established&&s.image.coherence>=82&&s.image.believers>=35&&rank<=2&&s.fame>=70)return["人设封神","六十个月，没有一次热搜改掉你。你当初立的那个样子，后来就是你本人的样子。观众记住的不是某个角色，是一个名字。",true];if(s.image.pivoted&&s.image.coherence>=72&&rank<=2)return["转型成功","你亲手拆了当年立起来的那个样子，掉了一半的粉。三年后再有人写你，用的已经不是旧标签了。",true];const __lv=loveEnding(s);if(__lv)return __lv;
- if(s.track.awards>=2&&s.persona.actor>=22&&majorFilmWin(s)&&rank<=3)return[s.gender==="female"?"影后":"影帝","你的名字第二次刻在了同一个奖杯上。还有人在算你的数据，行业已经在报你的角色。",true];if(s.track.awards>=1&&s.persona.music>=24&&s.awards&&s.awards.jinqu&&rank<=3)return[s.gender==="female"?"金曲歌后":"金曲歌王","五年前那段被逐帧分析的现场直拍还挂在网上。五年后，整个会场跟着唱完了你的歌。",true];const __x=extEnding(s);if(__x)return __x;if(rank===1&&s.fame>=88&&s.fans>=75)return["顶流中心","六十个月，你的名字从签约通稿爬到了每一张榜单的第一行。现在难的不是被看见，是决定给他们看什么。",true];if(s.independent&&s.cash>150&&rank<=2)return["独立工作室","违约金付完了，人也补齐了。你现在知道六个人一个月要花多少钱。第六十个月，门牌挂上去了。",true];if(rival.fav>=82&&Math.abs(playerScore(s)-main.score)<10&&rank<=3)return["双星并耀","你和当年一起签约的那个人，谁也没把谁挤出去。角色争过，番位争过，奖也争过。最后你们成了对方唯一的那把尺子。",true];if(s.track.variety>=9&&s.persona.variety>=28&&rank<=3)return["综艺常青树","同期还在等新剧定档的时候，你已经是每年有三档节目等着的人。观众说不出你演过谁，但知道有你的那期不会冷。",true];if(s.track.endorsement>=9&&s.commercial>=85&&s.cash>200&&rank<=3)return["商业宠儿","从国民饮料到奢侈品，你的名字进了七个品牌的年度计划。作品还有人吵。市场那边早就报完价了。",true];if(clean&&s.publicFavor>=82&&condition>=70&&rank<=3)return["干净的名字","你推掉过来钱最快的那几个，也在该开口的时候开过口。五年下来，账上一笔说不清的都没有。",true];if(rank>=5&&main.score>playerScore(s)+12)return["宿敌的胜利",`六十个月前，你和${rival.name}坐在同一张桌前签约。现在对方站在了你曾经想去的位置。你没有退圈，但下一份合同已经不再由你开价。`,false];if(s.fame<45||s.cash<0)return["过气与转型","热搜上慢慢没有你了。你开始接主持、上课、给人做制片、演小角色。这些也是工作。",false];const __top=rank<=2&&s.fame>=70;return[__top?"稳定一线":"圈内有名",__top?"你没成神话，也没被哪一次风波带走。五年后，项目方开会的时候会认真查你的档期，也会认真报价。":"五年过去，你还有工作，还有粉丝，还有几个被人记住的镜头。跟当初想的不一样。门还开着。",__top]}
+function endingFor(s){const rank=myRank(s),rival=s.npcs.find(n=>n.id==="rival_main"),main=s.competitors.find(c=>c.main),clean=s.track.gray===0,condition=(s.health+s.mental)/2;if(s.image.established&&s.image.coherence>=82&&s.image.believers>=35&&rank<=2&&s.fame>=70)return["人设封神","六十个月，没有一次热搜改掉你。你当初立的那个样子，后来就是你本人的样子。观众记住的不是某个角色，是一个名字。",true];if(s.image.pivoted&&s.image.coherence>=72&&rank<=2)return["转型成功","你亲手拆了当年立起来的那个样子，掉了一半的粉。后来再有人写你，用的已经不是旧标签了。",true];
+ if(s.track.awards>=2&&s.persona.actor>=22&&majorFilmWin(s)&&rank<=3)return[s.gender==="female"?"影后":"影帝","你的名字第二次刻在了同一个奖杯上。还有人在算你的数据，行业已经在报你的角色。",true];if(s.track.awards>=1&&s.persona.music>=24&&s.awards&&s.awards.jinqu&&rank<=3)return[s.gender==="female"?"金曲歌后":"金曲歌王","五年前那段被逐帧分析的现场直拍还挂在网上。五年后，整个会场跟着唱完了你的歌。",true];const __x=extEnding(s);if(__x)return __x;if(rank===1&&s.fame>=88&&s.fans>=75)return["顶流中心","六十个月，你的名字从签约通稿爬到了每一张榜单的第一行。现在难的不是被看见，是决定给他们看什么。",true];if(s.independent&&s.cash>150&&rank<=2)return["独立工作室","违约金付完了，人也补齐了。你现在知道六个人一个月要花多少钱。第六十个月，门牌挂上去了。",true];if(rival.fav>=82&&Math.abs(playerScore(s)-main.score)<10&&rank<=3)return["双星并耀","你和当年一起签约的那个人，谁也没把谁挤出去。角色争过，番位争过，奖也争过。最后你们成了对方唯一的那把尺子。",true];if(s.track.variety>=9&&s.persona.variety>=28&&rank<=3)return["综艺常青树","同期还在等新剧定档的时候，你已经是每年有三档节目等着的人。观众说不出你演过谁，但知道有你的那期不会冷。",true];if(s.track.endorsement>=9&&s.commercial>=85&&s.cash>200&&rank<=3)return["商业宠儿","从国民饮料到奢侈品，你的名字进了七个品牌的年度计划。作品还有人吵。市场那边早就报完价了。",true];if(clean&&s.publicFavor>=82&&condition>=70&&rank<=3)return["干净的名字","你推掉过来钱最快的那几个，也在该开口的时候开过口。五年下来，账上一笔说不清的都没有。",true];if(rank>=5&&main.score>playerScore(s)+12)return["宿敌的胜利",`六十个月前，你和${rival.name}坐在同一张桌前签约。现在对方站在了你曾经想去的位置。你没有退圈，但下一份合同已经不再由你开价。`,false];if(s.fame<45||s.cash<0)return["过气与转型","热搜上慢慢没有你了。你开始接主持、上课、给人做制片、演小角色。这些也是工作。",false];const __top=rank<=2&&s.fame>=70;/* v6批次Q：恋爱结局排在事业结局之后。事业上有特别结果就用事业的，恋爱结果进结局卡徽章；
+   恋爱好结局还要事业过得去（前3、知名度55），否则落回事业兜底 */const __lv=loveEnding(s);if(__lv){if(__lv[2]&&rank<=3&&s.fame>=55)return __lv;if(!__lv[2]&&!__top)return __lv}return[__top?"稳定一线":"圈内有名",__top?"你没成神话，也没被哪一次风波带走。五年后，项目方开会的时候会认真查你的档期，也会认真报价。":"五年过去，你还有工作，还有粉丝，还有几个被人记住的镜头。跟当初想的不一样。门还开着。",__top]}
 function showEnd(title,story,good){S.over=true;S.endData={title,story,good};save();try{hallPush(S,title,good)}catch(e){}if(good){starfall(40)}else{shake(2)}modalQueue=[];try{const __tb=document.getElementById("toastBox");if(__tb)__tb.innerHTML=""}catch(e){}$("#mask").classList.remove("show");const badges=[];if(S.track.awards)badges.push("奖项认可");if(S.track.bestQuality>=85)badges.push("代表作");if(S.fame>=85)badges.push("全民知名");if(S.publicFavor>=75)badges.push("国民好感");if(S.track.gray===0)badges.push("账目干净");if(S.independent)badges.push("独立艺人");if(S.romanceId)badges.push(S.love&&S.love.stage>=3?"一起过日子":S.romancePublic?"公开爱人":"秘密关系");if(S.love&&S.love.ending==="married")badges.push("领了证");if(S.orientation==="none"&&S.month>=MAX_MONTH)badges.push("一个人走完");if(myRank(S)===1)badges.push("榜首");if(!badges.length)badges.push("撑完五年");const grid=[["五年净现金",`${Math.round(S.cash-(BACKGROUNDS[S.background].cash+COMPANIES[S.company].advance))}万`],["完成项目",`${S.track.projects}个`],["最佳作品",`${S.track.bestQuality}分`],["主要奖项",`${S.track.awards}个`],["最终排名",`第${myRank(S)}名`],["团队规模",`${S.team.length}人`],["试镜命中",`${S.track.auditionWins}/${S.track.auditions}`],["跑人脉",`${S.track.relations}次`],["团队变动",`${S.track.hires+S.track.fires+S.track.teamMoves}次`]];const ach=checkAchievements(S,title,good),unlocked=Object.keys(ach.meta.ach).length;const talentChips=(S.talents||[]).map(id=>`<span class="badge gold-b">${ico("star")}${TALENTS[id].name}</span>`).join("");const highlights=S.log.filter(l=>l.cls==="good"||l.cls==="bad").slice(0,3).reverse();$("#endCard").innerHTML=`<div class="end-art"><img src="${artURL("scene",good?"end_good":"end_bad")}" alt="" onerror="this.parentNode.remove()"></div><div class="eyebrow">《模拟明星》60个月结算 · ${esc(S.playerName)}</div><h2>${ico(good?"trophy":"warn")} ${title}</h2><div class="story">${story}</div>${talentChips?`<div class="badges">${talentChips}</div>`:""}<div class="metric-grid">${grid.map(([k,v])=>`<div class="metric"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("")}</div><div class="badges">${badges.map(x=>`<span class="badge">${x}</span>`).join("")}</div>${highlights.length?`<div class="hl-title">生涯高光时刻</div><div class="hl-list">${highlights.map(l=>`<div class="hl ${l.cls}">${esc(l.text)}</div>`).join("")}</div>`:""}<div class="hl-title">生涯里程碑</div><div class="badges">${(S.feats||[]).length?(S.feats||[]).map(x=>`<span class="badge gold-b">${ico("diamond")}${esc(x)}</span>`).join(""):`<span class="badge">这一局没有留下特别的印记</span>`}</div>${(S.image.history||[]).length?`${(()=>{v11Init(S);const w=AWARDS.filter(a=>S.awards[a.id]);return w.length?`<div class="hl-title">奖项柜</div><div class="badges">${w.map(a=>`<span class="badge gold-b">${ico("trophy")}${esc(a.name)}${S.awards[a.id]>1?"×"+S.awards[a.id]:""}</span>`).join("")}</div>`:""})()}<div class="hl-title">人设变迁</div><div class="badges">${S.image.history.map(h=>`<span class="badge">第${h.m}月 ${h.ev==="pivot"?"转向":"立起"}「${esc((IMAGE_ARCHETYPES[h.tag]||{}).name||"")}」</span>`).join("")}</div>`:""}<div class="hl-title">宿敌战绩</div><div class="badges"><span class="badge">${S.duel.wins}胜 ${S.duel.losses}负</span><span class="badge">难度 ${DIFF(S).label}</span><span class="badge">甩掉跟拍 ${S.paparazzi.escaped} 次</span></div>${(()=>{try{const o=omens(S);return o.length?`<div class="hl-title">离这些结局还差一点</div><div class="hl-list">${o.map(r=>`<div class="hl">「${esc(r.title)}」${r.done}/${r.total}　${r.miss.map(esc).join("；")}</div>`).join("")}</div>`:""}catch(e){return""}})()}<div class="hl-title">留给下一段星途</div><div class="copy">三选一。这一局带不走的东西，可以换一件留给下一个人。</div><div class="relic-grid" id="relicBox"></div><div class="hl-title">生涯名人堂</div>${renderHall()}<div class="hl-title">成就收集 ${unlocked}/${ACHIEVEMENTS.length}${ach.fresh.length?` · 本局新解锁${ach.fresh.length}个`:""}</div><div class="ach-grid">${ACHIEVEMENTS.map(a=>`<div class="ach ${ach.meta.ach[a.id]?"on":""}"><b>${ach.fresh.includes(a.id)?"NEW · ":""}${a.name}</b><small>${a.desc}</small></div>`).join("")}</div><button class="primary" style="width:100%;margin-top:10px" onclick="restartGame()">重新签一份合约</button>`;relicOffer(S,good);$("#ending").classList.add("show")}
 function endMonth(){if(S.over)return;if(S.energy>0){showModal("本月还有行动力",`还剩${S.energy}点行动力，确定直接进入月末结算？`,[eventOption("直接结算","剩余行动力作废",()=>doEndMonth()),eventOption("回去再看看","",()=>{})]);return}doEndMonth()}
 const IMAGE_SUGGEST={academy:["purist","devoted"],talent:["sunny","devoted"],influencer:["buzzy","candid"],child:["purist","sunny"]};
@@ -1269,7 +1287,7 @@ const STORY_ARCS=[
  const heat=((s.arcs.rivalry||{}).heat)||0; /* v5：arcTouch 写了六场擂台的 heat，此前从未被读取 */
  const line=heat>=2?"「我一直在想，如果当时坐反了，会不会就是我在问你这句话。」"
   :heat<=-2?"「签约那天你说了一句话，你还记得吗。」他顿了一下，「我记得。」"
-  :"「三年了。」他把菜单推过来，「谁也没把谁挤下去。」";
+  :"「好几年了。」他把菜单推过来，「谁也没把谁挤下去。」";
  const canJoin=heat>-3||(r&&r.fav>=55);
  return{id:"riv_final",title:"当年那张桌子",body:`${rn}约你吃饭，地点是当年一起签约的那栋楼下面。战绩${w}胜${l}负。\n\n${line}`,
  opts:()=>[
@@ -3809,9 +3827,11 @@ function rerollName(){
    v5 实测：普通难度第5月登顶、第9月知名度破90、36个月攒下近900万。
    问题不在单个数值，在于往上走没有阻力、到了顶上没有成本。
    ══════════════════════════════════════════════════════════════════ */
-const V6_DIFF={easy:{damp:.7,life:.7,chase:.9,heat:.6,warn:.8,cool:1.5},normal:{damp:1,life:1,chase:.55,heat:.8,warn:1,cool:1.3},hard:{damp:1.05,life:1.05,chase:.6,heat:.5,warn:1,cool:1.7}};
+const V6_DIFF={easy:{damp:.7,life:.7,chase:.75,heat:.6,warn:.8,cool:1.5},normal:{damp:1,life:1,chase:.55,heat:.8,warn:1,cool:1.3},hard:{damp:1.05,life:1.05,chase:.6,heat:.5,warn:1,cool:1.7}};
 const V6D=s=>V6_DIFF[(s&&s.difficulty)||"normal"]||V6_DIFF.normal;
 /* 知名度 60 以上，越往上越难涨 */
+/* 商业价值同理：50 以上越涨越慢 */
+function commDamp(s){if(!s||s.commercial<=50)return 1;return Math.max(.06,1-(s.commercial-50)/45*V6D(s).damp)}
 function fameDamp(s){if(!s||s.fame<=40)return 1;return Math.max(.08,1-(s.fame-40)/55*V6D(s).damp)}
 /* 排场：保姆车、造型、安保、助理的助理。红了就得花 */
 function lifestyleCost(s){if(!s)return 0;return round(Math.max(0,s.fame-35)*.3*V6D(s).life,1)}
@@ -3821,17 +3841,18 @@ function majorFilmWin(s){const a=s.awards||{};return !!(a.jinji||a.jinma||a.jinx
 /* 近 12 个月最好的一部，奖项看这个 */
 function recentBest(s){const h=(s.track&&s.track.qHist)||[];const r=h.filter(x=>x.m>s.month-12).map(x=>x.q);return r.length?Math.max(...r):Math.min(s.track.bestQuality,60)}
 function withRecentBest(s,fn){const b=s.track.bestQuality;s.track.bestQuality=recentBest(s);try{return fn()}finally{s.track.bestQuality=b}}
-{const __cp=completeProject;completeProject=function(s,p,rng){const f0=s.fame,c0=s.commercial;const r=__cp(s,p,rng);if(s.fame>f0)s.fame=f0+(s.fame-f0)*.55;if(s.commercial>c0)s.commercial=c0+(s.commercial-c0)*.75;try{s.track.qHist=(s.track.qHist||[]).concat([{m:s.month,q:r.quality}]).slice(-30)}catch(e){}return r}}
+{const __cp=completeProject;completeProject=function(s,p,rng){const f0=s.fame,c0=s.commercial;const r=__cp(s,p,rng);if(s.fame>f0)s.fame=f0+(s.fame-f0)*.55;if(s.commercial>c0)s.commercial=c0+(s.commercial-c0)*.6;if(p.type==="endorsement")s.track.lastEndo=s.month;try{s.track.qHist=(s.track.qHist||[]).concat([{m:s.month,q:r.quality}]).slice(-30)}catch(e){}return r}}
 {const __ae=awardEligible;awardEligible=function(a,s){return withRecentBest(s,()=>__ae(a,s))}}
 {const __as=awardShow;awardShow=function(a,yr){return withRecentBest(S,()=>__as(a,yr))}}
+{const __am=awardMiss;awardMiss=function(a,s){return withRecentBest(s,()=>__am(a,s))}}
 AWARDS.forEach(a=>{const n=a.nomP,w=a.winP;a.nomP=s=>n(s)*.82;a.winP=s=>w(s)*.67});
 /* 对手：基础成长吃难度系数，另外会追。你甩得越远，他们追得越凶 */
 advanceCompetitors=function(s,rng=Math.random){const ps=playerScore(s),dm=1+(DIFF(s).rivalMul-1)*.5,ch=V6D(s).chase,yr=Math.ceil(s.month/12);
  const sorted=[...s.competitors].sort((a,b)=>b.score-a.score);
- s.competitors.forEach(c=>{let growth=(.28+c.momentum*.5+(rng()-.5)*1.4)*dm;if(rng()<.08)growth+=rng()*5;if(rng()<.035)growth-=rng()*6;
+ s.competitors.forEach(c=>{const yf=[2.6,1.2,.8,.6,.5][Math.min(4,yr-1)];let growth=(.28+c.momentum*.5+(rng()-.5)*1.4)*dm*yf;if(rng()<.08)growth+=rng()*5;if(rng()<.035)growth-=rng()*6;
   const lead=ps-c.score,top=sorted.indexOf(c)<2||c.main;
   if(lead>0)growth+=Math.min(top?2.4:1.2,lead*(top?.07:.03)*ch);
-  else if(lead<-25)growth-=.4;
+  else growth*=lead<-15?.3:.6; /* 已经领先你的人不会一直往上冲 */
   c.score=clamp(c.score+growth,12,150)});
  const main=s.competitors.find(c=>c.main),rel=s.npcs.find(n=>n.id==="rival_main");if(main&&rel&&rel.fav>=75)main.score+=.2};
 
@@ -3853,6 +3874,7 @@ function riskFixMenu(){if(!needEnergy())return;const rows=Object.keys(RISK_FIX).
 
 /* 月度：高位回落 + 红了之后隐患自己长 */
 function v6Settle(s){
+ /* 商业价值 75 以上，半年没有代言在手就往下掉 */if(s.commercial>=75){const hasEndo=s.activeProjects.some(p=>p.type==="endorsement")||(s.track.lastEndo||0)>s.month-6;if(!hasEndo)add(s,"commercial",-round(1+(s.commercial-75)/15,1))}
  if(s.fame>=70){const drop=round((1+(s.fame-70)/12)*V6D(s).damp,1);add(s,"fame",-drop)}
  {const cool=V6D(s).cool||1;Object.keys(s.risks).forEach(k=>{s.risks[k]=clamp((s.risks[k]||0)-cool,0,120)})}
  if(s.fame>=72){const h=V6D(s).heat*(s.fame>=88?1.5:1);risk(s,"privacy",.7*h);risk(s,"fandom",0*h);risk(s,"tax",.5*h)}
@@ -3934,22 +3956,22 @@ const STAGES=[null,
  {name:"一线期",line:"你的位置有人在等。比你年轻，比你便宜。"},
  {name:"守擂期",line:"合约最后一年。下一份合同怎么签，看这一年。"}];
 const REVIEW_GOALS=[null,
- {fame:28,proj:2,commercial:22},
- {fame:42,proj:3,commercial:34},
- {fame:56,proj:4,commercial:50},
- {fame:64,proj:4,commercial:60}];
+ {rank:4,proj:6,work:70},
+ {rank:3,proj:8,work:80},
+ {rank:3,proj:10,work:86},
+ {rank:2,proj:10,work:90}];
 const ROOKIE_MONTHS=[38,41,44,47,50,53,56,59];
-function v14Init(s){if(!s)return;s.v14=s.v14||{};const v=s.v14;if(v.fails===undefined)v.fails=0;v.reviews=v.reviews||{};v.rookies=v.rookies||0;if(v.yStart===undefined){v.yStart={proj:s.track.projects,m:s.month};if(s.month>1)v.skipYr=Math.ceil(s.month/12)}if(!v.goals)v.goals=reviewGoals(s,Math.ceil(s.month/12))}
-{const __is=initialState;initialState=function(c){const s=__is(c);v14Init(s);/* v6：同期的人起步比你高一截，不是摆设 */(s.competitors||[]).forEach(x=>{x.score+=10});return s}}
+function v14Init(s){if(!s)return;s.v14=s.v14||{};const v=s.v14;if(v.fails===undefined)v.fails=0;v.reviews=v.reviews||{};v.rookies=v.rookies||0;if(v.yStart===undefined){v.yStart={proj:s.track.projects,m:s.month};if(s.month>1)v.skipYr=Math.ceil(s.month/12)}if(!v.goals||v.goals.rank===undefined)v.goals=reviewGoals(s,Math.ceil(s.month/12));/* 旧存档没有作品记录：用生涯最好成绩补一条，免得升级后一年拿不了奖 */if(!s.track.qHist&&s.track.bestQuality>0)s.track.qHist=[{m:s.month,q:s.track.bestQuality}]}
+{const __is=initialState;initialState=function(c){const s=__is(c);v14Init(s);/* v6：同期的人起步比你高一截，不是摆设 */(s.competitors||[]).forEach(x=>{x.score+=(s.difficulty==="easy"?14:18)});return s}}
 function yearOf(s){return Math.min(5,Math.ceil(s.month/12))}
 function stageInfo(s){return STAGES[yearOf(s)]}
-function reviewGoals(s,yr){const g=REVIEW_GOALS[Math.min(4,yr)];if(!g)return null;const k={easy:.85,normal:1,hard:1.1}[s.difficulty||"normal"]||1;return{yr,fame:Math.round(g.fame*k),proj:Math.max(1,Math.round(g.proj*(k>1?1:k<1?.9:1))),commercial:Math.round(g.commercial*k)}}
-function reviewRows(s){v14Init(s);const g=s.v14.goals;if(!g)return[];const proj=s.track.projects-s.v14.yStart.proj;return[["知名度",Math.round(s.fame),g.fame],["今年完成项目",proj,g.proj],["商业价值",Math.round(s.commercial),g.commercial]].map(([n,v,t])=>({n,v,t,ok:v>=t}))}
+function reviewGoals(s,yr){const g=REVIEW_GOALS[Math.min(4,yr)];if(!g)return null;const d=s.difficulty||"normal";return{yr,rank:Math.min(6,g.rank+(d==="easy"?1:0)),proj:Math.max(1,g.proj-(d==="easy"?2:0)),work:Math.min(95,g.work+(d==="easy"?-6:d==="hard"?2:0))}}
+function reviewRows(s){v14Init(s);const g=s.v14.goals;if(!g)return[];const proj=s.track.projects-s.v14.yStart.proj,rk=myRank(s),w=recentBest(s);return[{n:"全网排名",v:`第${rk}名`,t:`前${g.rank}`,ok:rk<=g.rank,gap:rk-g.rank,unit:"名"},{n:"今年完成项目",v:proj,t:g.proj,ok:proj>=g.proj,gap:g.proj-proj,unit:"个"},{n:"近一年最好作品",v:w,t:g.work,ok:w>=g.work,gap:g.work-w,unit:"分"}]}
 function renderReviewCard(){if(!S)return"";v14Init(S);const st=stageInfo(S),yr=yearOf(S);const rows=reviewRows(S);
  const head=`<div class="row"><div><span class="type">第${yr}年</span><h3>${st.name}</h3></div><span class="pill ${S.v14.fails?"red":"gold"}">${S.v14.fails?"去年考核未过":"第"+yr+"/5年"}</span></div><div class="copy">${st.line}</div>`;
  if(S.v14.skipYr===yr&&yr<5)return `<div class="card stage-card">${head}<div class="copy">旧存档升级：今年不考核，明年开始。</div></div>`;if(yr>=5||!rows.length)return `<div class="card stage-card">${head}<div class="copy">最后一年没有考核。第${MAX_MONTH}月结束时，看你走到了哪里。</div></div>`;
  const left=yr*12-S.month;
- return `<div class="card stage-card">${head}<div class="section-head" style="margin-top:8px"><h2>年终考核</h2><span>三项过两项算合格 · 还剩${left}个月结算</span></div>${rows.map(r=>`<div class="goal-row ${r.ok?"ok":""}"><span>${r.n}</span><b>${r.v} / ${r.t}</b><i>${r.ok?"达标":"差"+(r.t-r.v)}</i></div>`).join("")}${S.v14.fails?`<div class="copy down">再不合格一次，就没有下一份合同了。</div>`:""}</div>`}
+ return `<div class="card stage-card">${head}<div class="section-head" style="margin-top:8px"><h2>年终考核</h2><span>三项过两项算合格 · 还剩${left}个月结算</span></div>${rows.map(r=>`<div class="goal-row ${r.ok?"ok":""}"><span>${r.n}</span><b>${r.v} / ${r.t}</b><i>${r.ok?"达标":"差"+r.gap+r.unit}</i></div>`).join("")}${S.v14.fails?`<div class="copy down">再不合格一次，就没有下一份合同了。</div>`:""}</div>`}
 function v14Tasks(s){v14Init(s);const out=[];const m=s.month;
  if(m%12===0&&m<MAX_MONTH){if(s.v14.skipYr===yearOf(s)){/* 旧存档中途升级：这一年不考，从下一年开始 */const yr=yearOf(s);s.v14.yStart={proj:s.track.projects,m:m+1};s.v14.goals=reviewGoals(s,yr+1);out.push(()=>stageIntroNow(s,yr+1))}else out.push(()=>yearReview(s));}
  if(m===24)out.push(()=>rivalUpgrade(s));
@@ -3973,7 +3995,7 @@ function yearReview(s){const yr=yearOf(s),rows=reviewRows(s),pass=rows.filter(r=
   [eventOption("明年补回来",`不合格。${s.independent?"":"公司关系-10，"}合同隐患上升。再不合格一次就结束`,()=>{if(!s.independent)s.companyFavor=clamp(s.companyFavor-10);risk(s,"contract",8);add(s,"mental",-5);gameLog(s,"bad",`第${yr}年考核不合格。`);stageIntro(s,yr+1)})]);
 }
 function stageIntro(s,yr){const st=STAGES[yr];if(!st)return;const g=s.v14.goals;
- const goal=g&&yr<5?`\n\n明年年底要看：知名度${g.fame}、全年完成${g.proj}个项目、商业价值${g.commercial}。三项过两项。`:"\n\n这一年没有考核。";
+ const goal=g&&yr<5?`\n\n今年年底要看三样：全网排名进前${g.rank}，全年完成${g.proj}个项目，近一年最好的作品到${g.work}分。过两样算合格。`:"\n\n这一年没有考核。";
  modalQueue.unshift(()=>showModal(`第${yr}年 · ${st.name}`,st.line+goal,[{text:"知道了"}]))}
 function stageIntroNow(s,yr){stageIntro(s,yr);flushQueue()}
 function rivalUpgrade(s){const rn=rivalName(s),main=s.competitors.find(c=>c.main);if(main){main.momentum+=.35;main.score+=4}
@@ -3997,7 +4019,7 @@ function contractTalk(s){const c=currentCompany(s),others=Object.keys(COMPANIES)
  showModal("合约到期谈判",`${c.name}的续约方案放在桌上，比你想的薄。${alt?`\n\n同一周，${alt.name}的人约你在酒店大堂喝了杯咖啡。他们没带合同，带了一张纸，上面只写了一个数字。`:""}\n\n你也可以谁都不签。`,
   [eventOption(`续约${c.name}`,stay?`签字费${sign}万，公司关系+10`:"公司没打算续",()=>{add(s,"cash",sign);s.companyFavor=clamp(s.companyFavor+10);risk(s,"contract",-10);gameLog(s,"good",`你和${c.name}续了约。`)},!stay),
    ...(alt?[eventOption(`跳去${alt.name}`,`签字费${poach}万，路人缘-3，宿敌好感-5`,()=>{add(s,"cash",poach);s.company=altKey;s.companyFavor=55;add(s,"publicFavor",-3);relation(s,"rival_main",-5);risk(s,"contract",-6);gameLog(s,"good",`你签进了${alt.name}。老东家没发祝福微博。`)})]:[]),
-   eventOption("单飞，开自己的工作室","不付违约金，之后自负盈亏",()=>{s.independent=true;risk(s,"contract",-12);gameLog(s,"good","合约到期那天你没去公司。工作室的营业执照是上周办下来的。")})])}
+   eventOption("单飞，开自己的工作室","不付违约金，公司派的经纪人撤回，之后自负盈亏",()=>{breakContract(0,false);gameLog(s,"good","合约到期那天你没去公司。工作室的营业执照是上周办下来的。")})])}
 
 /* ══════════════════════════════════════════════════════════════════
    《模拟明星》v6 · 批次N  角色档案
@@ -4006,7 +4028,9 @@ function contractTalk(s){const c=currentCompany(s),others=Object.keys(COMPANIES)
 const RISK_WARN_LINE=64,RISK_DANGER_LINE=94;
 function riskLevel(v){return v>=RISK_DANGER_LINE?"red":v>=RISK_WARN_LINE?"amber":v>=40?"warm":"ok"}
 function riskBar(k,v,compact){const lv=riskLevel(v),w=Math.min(100,v/120*100);return `<div class="rbar ${lv}${compact?" compact":""}"><span class="rname">${ico(RISK_ICON[k])}${RISK_NAMES[k]}</span><div class="rtrack"><i style="width:${w}%"></i><em style="left:${RISK_WARN_LINE/1.2}%"></em><em class="d" style="left:${RISK_DANGER_LINE/1.2}%"></em></div><b>${Math.round(v)}</b></div>`}
-function renderRiskStrip(){const el=$("#riskStrip");if(!el||!S)return;const rows=Object.keys(S.risks).sort((a,b)=>S.risks[b]-S.risks[a]).slice(0,3);el.innerHTML=`<div class="rs-head"><span>隐患最高的三项</span><span class="rs-btns"><button class="rs-more" onclick="riskFixMenu()">排查</button><button class="rs-more" onclick="switchTab('dossier')">全部 ›</button></span></div>${rows.map(k=>riskBar(k,S.risks[k],true)).join("")}`;el.classList.toggle("alarm",S.risks[rows[0]]>=RISK_DANGER_LINE)}
+function renderRiskStrip(){const el=$("#riskStrip");if(!el||!S)return;const rows=Object.keys(S.risks).sort((a,b)=>S.risks[b]-S.risks[a]).slice(0,3);
+ /* v6批次Q：压成一行。完整进度条在档案页 */
+ el.innerHTML=`<button class="rs-main" onclick="switchTab('dossier')" aria-label="查看全部隐患"><span class="rs-label">隐患</span>${rows.map(k=>`<span class="rs-chip ${riskLevel(S.risks[k])}">${ico(RISK_ICON[k])}${RISK_NAMES[k]}<b>${Math.round(S.risks[k])}</b></span>`).join("")}</button><button class="rs-fix" onclick="riskFixMenu()">排查</button>`;el.classList.toggle("alarm",S.risks[rows[0]]>=RISK_DANGER_LINE)}
 function dosBar(name,v,max,cls,extra){const w=Math.max(0,Math.min(100,v/max*100));return `<div class="dbar ${cls||""}"><span class="dname">${name}</span><div class="dtrack"><i style="width:${w}%"></i></div><b>${Math.round(v)}</b>${extra?`<small>${extra}</small>`:""}</div>`}
 function dosDelta(k){const d=(S.lastDelta||{})[k]||0;return d?`<span class="${d>0?"up":"down"}">${d>0?"+":""}${Math.round(d*10)/10}</span>`:""}
 function renderDossier(){
@@ -4022,7 +4046,7 @@ function renderDossier(){
  $("#panel").innerHTML=`${renderReviewCard()}
  <div class="card dossier-head"><div class="row"><div><h3>${esc(S.playerName)}</h3><div class="copy">${GENDER_NAME[S.gender]} · ${esc(currentCompany(S).name)} · ${esc(BACKGROUNDS[S.background].name)} · 第${S.month}月</div></div><div class="number">综合分 <b>${Math.round(sc)}</b></div></div>
   <div class="dos-rank"><span class="pill ${rk<=2?"green":rk>=5?"red":"gold"}">全网第${rk}/6</span><span>${lead}</span><span>对${esc(rival?rival.name:"宿敌")} ${rivalGap>=0?"领先":"落后"} ${Math.abs(rivalGap)} 分</span></div>
-  <div class="copy">综合分 = 知名度×0.32 + 路人缘×0.19 + 商业价值×0.17 + 最佳作品×0.18 + 粉丝×0.1 + 每座奖4分。</div></div>
+  <div class="copy">综合分 = 知名度×0.32 + 路人缘×0.19 + 商业价值×0.17 + 最佳作品×0.18 + 粉丝×0.1 + 每座奖3分。</div></div>
  <div class="card"><div class="section-head"><h2>主数值</h2><span>小字是上月变化</span></div>
   <div class="dos-cash"><span>现金 <b class="${S.cash<0?"down":""}">${Math.round(S.cash)}万</b> ${dosDelta("cash")}</span><span>本月预计净额 <b class="${calculateForecast(S).net>=0?"up":"down"}">${calculateForecast(S).net}万</b></span></div>
   ${main8.map(([n,k])=>dosBar(n,S[k],100,(k==="health"||k==="mental")&&S[k]<35?"low":"",dosDelta(k))).join("")}
